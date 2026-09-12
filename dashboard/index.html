@@ -220,12 +220,12 @@
               <tr>
                 <th>Conflict Rate C</th>
                 <th>Fast Success F(C)</th>
-                <th>Rollback Amp. RA</th>
-                <th>AetherBFT p50</th>
-                <th>PBFT p50 (3 RTT)</th>
-                <th>HotStuff p50 (3 RTT)</th>
-                <th>Raft CFT Ceiling</th>
-                <th>Aether Speedup</th>
+                <th>Rollback Amp. RA(C)</th>
+                <th>AetherBFT L(C) p50</th>
+                <th>PBFT Simulated Ref. (3 RTT)</th>
+                <th>HotStuff Simulated Ref. (3 RTT)</th>
+                <th>Raft CFT Reference</th>
+                <th>Modeled Delay Ratio</th>
               </tr>
             </thead>
             <tbody id="pareto-table-body">
@@ -233,56 +233,56 @@
                 <td><strong>0% (Disjoint)</strong></td>
                 <td><span class="badge-green">100.0%</span></td>
                 <td>0.000</td>
-                <td><strong>100.2 ms</strong></td>
+                <td><strong>100.8 ms</strong></td>
                 <td>300.4 ms</td>
                 <td>299.7 ms</td>
                 <td>100.0 ms</td>
-                <td><span class="badge-cyan">3.00x vs PBFT</span></td>
+                <td><span class="badge-cyan">3.00x vs PBFT Ref.</span></td>
               </tr>
               <tr>
                 <td><strong>5% Contention</strong></td>
                 <td><span class="badge-green">99.2%</span></td>
                 <td>0.008</td>
-                <td><strong>99.7 ms</strong></td>
+                <td><strong>100.3 ms</strong></td>
                 <td>299.7 ms</td>
                 <td>300.2 ms</td>
                 <td>99.7 ms</td>
-                <td><span class="badge-cyan">3.00x vs PBFT</span></td>
+                <td><span class="badge-cyan">3.00x vs PBFT Ref.</span></td>
               </tr>
               <tr>
                 <td><strong>10% Contention</strong></td>
                 <td><span class="badge-green">95.0%</span></td>
                 <td>0.050</td>
-                <td><strong>100.4 ms</strong></td>
+                <td><strong>101.0 ms</strong></td>
                 <td>300.0 ms</td>
                 <td>299.5 ms</td>
                 <td>99.7 ms</td>
-                <td><span class="badge-cyan">2.99x vs PBFT</span></td>
+                <td><span class="badge-cyan">2.99x vs PBFT Ref.</span></td>
               </tr>
               <tr>
                 <td><strong>25% Contention</strong></td>
                 <td><span class="badge-amber">75.0%</span></td>
                 <td>0.250</td>
-                <td><strong>101.1 ms</strong></td>
+                <td><strong>101.7 ms</strong></td>
                 <td>300.3 ms</td>
                 <td>300.6 ms</td>
                 <td>99.6 ms</td>
-                <td><span class="badge-cyan">2.97x vs PBFT</span></td>
+                <td><span class="badge-cyan">2.97x vs PBFT Ref.</span></td>
               </tr>
               <tr>
                 <td><strong>50% (High Contention)</strong></td>
                 <td><span class="badge-amber">55.0%</span></td>
                 <td>0.450</td>
-                <td><strong>102.3 ms</strong></td>
+                <td><strong>102.8 ms</strong></td>
                 <td>299.9 ms</td>
                 <td>300.3 ms</td>
                 <td>100.5 ms</td>
-                <td><span class="badge-cyan">2.93x vs PBFT</span></td>
+                <td><span class="badge-cyan">2.93x vs PBFT Ref.</span></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p class="bench-footnote">&ast; Tested across n=4 nodes, f=1 Byzantine fault tolerance bound, 100ms base RTT, 120 transactions per sweep.</p>
+        <p class="bench-footnote">&ast; Simulated protocol-delay benchmark evaluated across synthetic wide-area network latency distributions alongside real cryptographic verification (Ed25519) and MVCC branch execution (120 transactions per sweep, n=4, f=1).</p>
       </div>
     </div>
 
@@ -295,11 +295,11 @@
               <tr>
                 <th>Multi-Region Topology</th>
                 <th>Base RTT</th>
-                <th>Aether Fast (1 RTT)</th>
-                <th>Aether Slow (2 RTT)</th>
-                <th>Classical PBFT (3 RTT)</th>
-                <th>Modern HotStuff (3 RTT)</th>
-                <th>Net Speedup</th>
+                <th>Aether Fast (Modeled 1 RTT)</th>
+                <th>Aether Slow (Modeled 2 RTT)</th>
+                <th>PBFT Simulated Ref. (3 RTT)</th>
+                <th>HotStuff Simulated Ref. (3 RTT)</th>
+                <th>Modeled Delay Ratio</th>
               </tr>
             </thead>
             <tbody>
@@ -310,7 +310,7 @@
                 <td>4.00 ms</td>
                 <td>6.09 ms</td>
                 <td>6.01 ms</td>
-                <td><span class="badge-cyan">3.01x Speedup</span></td>
+                <td><span class="badge-cyan">3.01x Ratio</span></td>
               </tr>
               <tr>
                 <td><strong>WAN-Regional (US-East / West)</strong></td>
@@ -319,7 +319,7 @@
                 <td>151.18 ms</td>
                 <td>225.91 ms</td>
                 <td>224.98 ms</td>
-                <td><span class="badge-cyan">3.00x Speedup</span></td>
+                <td><span class="badge-cyan">3.00x Ratio</span></td>
               </tr>
               <tr>
                 <td><strong>WAN-Transatlantic (US / EU)</strong></td>
@@ -328,7 +328,7 @@
                 <td>299.86 ms</td>
                 <td>450.60 ms</td>
                 <td>450.23 ms</td>
-                <td><span class="badge-cyan">2.99x Speedup</span></td>
+                <td><span class="badge-cyan">2.99x Ratio</span></td>
               </tr>
               <tr>
                 <td><strong>WAN-Global (US-East / AP-South)</strong></td>
@@ -337,7 +337,7 @@
                 <td>381.39 ms</td>
                 <td>569.31 ms</td>
                 <td>570.84 ms</td>
-                <td><span class="badge-cyan">3.02x Speedup</span></td>
+                <td><span class="badge-cyan">3.02x Ratio</span></td>
               </tr>
             </tbody>
           </table>
@@ -356,9 +356,9 @@
                 <th>Nodes n</th>
                 <th>Byzantine Nodes f</th>
                 <th>Equivocation Proofs (PoE)</th>
-                <th>Safety Violations</th>
-                <th>Linearizability</th>
-                <th>Mean Latency</th>
+                <th>Conflicting Finalizations</th>
+                <th>Quarantine Latency</th>
+                <th>Mean Modeled Latency</th>
               </tr>
             </thead>
             <tbody>
@@ -367,8 +367,8 @@
                 <td>1</td>
                 <td>0</td>
                 <td>0</td>
-                <td><span class="badge-green">0 Violations</span></td>
-                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td><span class="badge-green">0 Observed</span></td>
+                <td><span class="badge-green">N/A</span></td>
                 <td>100.09 ms</td>
               </tr>
               <tr>
@@ -376,8 +376,8 @@
                 <td>4</td>
                 <td>1</td>
                 <td><span class="badge-red">33 Generated</span></td>
-                <td><span class="badge-green">0 Violations</span></td>
-                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td><span class="badge-green">0 Observed</span></td>
+                <td><span class="badge-green">1.0 Modeled RTT</span></td>
                 <td>133.39 ms (Slow fallback)</td>
               </tr>
               <tr>
@@ -385,9 +385,14 @@
                 <td>7</td>
                 <td>2</td>
                 <td><span class="badge-red">33 Generated</span></td>
-                <td><span class="badge-green">0 Violations</span></td>
-                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td><span class="badge-green">0 Observed</span></td>
+                <td><span class="badge-green">1.0 Modeled RTT</span></td>
                 <td>133.12 ms (Slow fallback)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="bench-footnote">&ast; Across the tested Byzantine schedules, AetherBFT produced 33 equivocation proofs and zero observed conflicting finalizations. Replica quarantine completed within one modeled RTT.</p>
               </tr>
             </tbody>
           </table>

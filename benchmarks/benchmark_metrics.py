@@ -1,10 +1,10 @@
 """
-AetherBFT: Benchmark Metrics Module
-Calculates:
+AetherBFT: Formal Benchmark Metrics Module
+Calculates the three fundamental quantities of the dual-path consensus trade-off:
 1. Fast-Path Success Rate: F(C) = N_fast / N_total
-2. Rollback Amplification: RA = Invalidated_Ops / Total_Speculative_Ops
-3. Recovery Cost Ratio: Rollback_Work / Total_Work
-4. Latency percentiles: p50, p95, p99
+2. Rollback Amplification: RA(C) = N_invalidated_speculative_ops / N_speculative_ops
+3. Commit Latency: L(C) = T_finalized - T_submit (p50, p95, p99, mean)
+Alongside Recovery Cost Ratio and CPU processing overhead.
 """
 
 import numpy as np
@@ -33,10 +33,10 @@ def compute_benchmark_kpis(
     # Fast-Path Success Rate F(C)
     f_c = float(fast_commits / max(1, total_txs))
 
-    # Rollback Amplification RA
+    # Rollback Amplification RA(C)
     ra = float(invalidated_ops / max(1, speculative_ops))
 
-    # Recovery Cost Ratio
+    # Recovery Cost Ratio: CPU time spent on rollback vs total CPU time
     recovery_cost_ratio = float(rollback_cpu_time / max(1e-6, total_cpu_time))
 
     return {

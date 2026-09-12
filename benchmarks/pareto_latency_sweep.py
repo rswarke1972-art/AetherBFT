@@ -1,13 +1,13 @@
 """
 AetherBFT: Pareto Latency Sweep Benchmark
-Evaluates AetherBFT against Classical PBFT, Modern HotStuff, and Raft across varying Conflict Rates:
+Evaluates AetherBFT against Classical PBFT, Modern HotStuff, and Raft CFT reference across varying Conflict Rates:
 C in {0%, 5%, 10%, 25%, 50%}.
 Simulates concurrent in-flight transaction pipelines across geo-distributed regions.
-Tracks:
-1. Fast-Path Success Rate F(C)
-2. Rollback Amplification RA
-3. Recovery Cost Ratio
-4. Wall-clock Latency Percentiles (p50, p95, p99)
+Explicitly tracks the three core quantities:
+1. Fast-Path Success Rate: F(C) = N_fast / N_total
+2. Rollback Amplification: RA(C) = N_invalidated_speculative_ops / N_speculative_ops
+3. Commit Latency: L(C) = T_finalized - T_submit (p50, p95, p99)
+Alongside actual cryptographic signing/verification and MVCC processing overhead.
 """
 
 import os
@@ -32,6 +32,7 @@ from benchmarks.benchmark_metrics import compute_benchmark_kpis
 
 def run_pareto_sweep():
     print("=== Starting AetherBFT Pareto Latency Sweep Benchmark ===")
+    print("Evaluating F(C), RA(C), and L(C) across Conflict Rates C in {0%, 5%, 10%, 25%, 50%}")
     random.seed(42)
     np.random.seed(42)
 
@@ -45,12 +46,13 @@ def run_pareto_sweep():
             "f": 1,
             "tx_per_run": n_tx_per_run,
             "base_rtt_ms": base_rtt_ms,
-            "conflict_rates": conflict_rates
+            "conflict_rates": conflict_rates,
+            "benchmark_classification": "simulated_protocol_delay_with_real_crypto_and_mvcc"
         },
         "aether_bft": [],
-        "pbft": [],
-        "hotstuff": [],
-        "raft": []
+        "pbft_simulated_reference": [],
+        "hotstuff_simulated_reference": [],
+        "raft_cft_reference": []
     }
 
     cluster_ids = ["node_0", "node_1", "node_2", "node_3"]
@@ -80,7 +82,6 @@ def run_pareto_sweep():
             tx_id = f"tx_c{int(c*100)}_{seq}"
 
             if is_conflict:
-                # Target active key of in-flight transaction to induce realistic pipeline collision
                 predecessor = in_flight_txs[-1]
                 target_key = list(predecessor.write_keys)[0]
             else:
@@ -94,43 +95,49 @@ def run_pareto_sweep():
                 payload={target_key: seq * 10}
             )
 
+            # High-resolution start time
+            t_submit = time.perf_counter()
             speculative_ops += 1
             res = leader.submit_transaction(tx)
 
             if res["route"] == "FAST_PATH":
                 in_flight_txs.append(tx)
-                # If pipeline depth reached or non-conflicting, resolve oldest
                 if len(in_flight_txs) >= pipeline_depth:
                     resolved_tx = in_flight_txs.pop(0)
                     for rep in replicas:
                         sig = rep.keypair.sign(resolved_tx.digest)
                         leader.receive_vote(resolved_tx.tx_id, rep.node_id, sig, is_fast_path=True)
                     fast_commits += 1
-                    lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0)
+                    proc_overhead_ms = (time.perf_counter() - t_submit) * 1000.0
+                    lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0) + proc_overhead_ms
                     aether_latencies.append(max(5.0, lat))
             else:
-                # Collided with in-flight transaction: routed to SLOW_PATH
+                # Conflict detected: route to slow-path & rollback speculative tentative branch
                 tb0 = time.perf_counter()
                 aborted_count = leader.abort_speculative_transaction(tx_id)
-                rollback_cpu += (time.perf_counter() - tb0)
+                rollback_time = time.perf_counter() - tb0
+                rollback_cpu += rollback_time
                 invalidated_ops += max(1, aborted_count)
 
-                # Slow path commit (2 RTTs) with 2f+1 quorum
+                # Collect 2f+1 = 3 slow-path votes with real crypto verification
                 for rep in replicas[:3]:
                     sig = rep.keypair.sign(tx.digest)
                     leader.receive_vote(tx.tx_id, rep.node_id, sig, is_fast_path=False)
                 slow_commits += 1
-                lat = (2.0 * base_rtt_ms) + random.gauss(0, 3.5)
+                proc_overhead_ms = (time.perf_counter() - t_submit) * 1000.0
+                lat = (2.0 * base_rtt_ms) + random.gauss(0, 3.5) + proc_overhead_ms
                 aether_latencies.append(max(5.0, lat))
 
-        # Drain remaining in-flight fast transactions
+        # Drain pipeline
         while in_flight_txs:
+            t_drain = time.perf_counter()
             resolved_tx = in_flight_txs.pop(0)
             for rep in replicas:
                 sig = rep.keypair.sign(resolved_tx.digest)
                 leader.receive_vote(resolved_tx.tx_id, rep.node_id, sig, is_fast_path=True)
             fast_commits += 1
-            lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0)
+            proc_overhead_ms = (time.perf_counter() - t_drain) * 1000.0
+            lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0) + proc_overhead_ms
             aether_latencies.append(max(5.0, lat))
 
         total_cpu = max(0.001, time.perf_counter() - t0_cpu)
@@ -146,18 +153,20 @@ def run_pareto_sweep():
         )
         aether_kpis["conflict_rate"] = c
         results["aether_bft"].append(aether_kpis)
-        print(f"  AetherBFT: p50={aether_kpis['latency_p50_ms']}ms, F(C)={round(aether_kpis['fast_path_success_rate']*100, 1)}%, RA={aether_kpis['rollback_amplification']}, Fast={fast_commits}, Slow={slow_commits}")
+        print(f"  AetherBFT: F(C)={round(aether_kpis['fast_path_success_rate']*100, 1)}%, RA(C)={aether_kpis['rollback_amplification']}, L(C) p50={aether_kpis['latency_p50_ms']}ms (Fast={fast_commits}, Slow={slow_commits})")
 
-        # Baseline: Classical PBFT (3 RTTs)
+        # Baseline: Classical PBFT (Simulated protocol-delay reference: 3 RTTs)
         pbft = ClassicalPBFTReplica("pbft_0", n_nodes=4, f_faults=1)
         pbft_latencies = []
         for seq in range(1, n_tx_per_run + 1):
+            t_pbft_start = time.perf_counter()
             pbft.process_pre_prepare(seq, f"digest_{seq}")
             for i in range(3):
                 pbft.process_prepare(f"node_{i}", seq)
             for i in range(3):
                 pbft.process_commit(f"node_{i}", seq, {"k": seq})
-            lat = (3.0 * base_rtt_ms) + random.gauss(0, 4.0)
+            pbft_proc_ms = (time.perf_counter() - t_pbft_start) * 1000.0
+            lat = (3.0 * base_rtt_ms) + random.gauss(0, 4.0) + pbft_proc_ms
             pbft_latencies.append(lat)
 
         pbft_kpis = compute_benchmark_kpis(
@@ -171,18 +180,20 @@ def run_pareto_sweep():
             total_cpu_time=1.0
         )
         pbft_kpis["conflict_rate"] = c
-        results["pbft"].append(pbft_kpis)
-        print(f"  PBFT:      p50={pbft_kpis['latency_p50_ms']}ms (3 RTTs conservative)")
+        results["pbft_simulated_reference"].append(pbft_kpis)
+        print(f"  PBFT (Simulated 3-RTT):     p50={pbft_kpis['latency_p50_ms']}ms")
 
-        # Baseline: Modern HotStuff (3 RTTs pipelined)
+        # Baseline: Modern HotStuff (Simulated protocol-delay reference: 3 RTTs pipelined)
         hs = ModernHotStuffReplica("hs_0", n_nodes=4, f_faults=1)
         hs_latencies = []
         b_prev = None
         for seq in range(1, n_tx_per_run + 1):
+            t_hs_start = time.perf_counter()
             blk = HotStuffBlock(seq, {"tx": seq}, b_prev._compute_hash() if b_prev else "genesis")
             hs.vote_block(blk)
             b_prev = blk
-            lat = (3.0 * base_rtt_ms) + random.gauss(0, 3.5)
+            hs_proc_ms = (time.perf_counter() - t_hs_start) * 1000.0
+            lat = (3.0 * base_rtt_ms) + random.gauss(0, 3.5) + hs_proc_ms
             hs_latencies.append(lat)
 
         hs_kpis = compute_benchmark_kpis(
@@ -196,15 +207,17 @@ def run_pareto_sweep():
             total_cpu_time=1.0
         )
         hs_kpis["conflict_rate"] = c
-        results["hotstuff"].append(hs_kpis)
-        print(f"  HotStuff:  p50={hs_kpis['latency_p50_ms']}ms (3 RTTs pipelined)")
+        results["hotstuff_simulated_reference"].append(hs_kpis)
+        print(f"  HotStuff (Simulated 3-RTT): p50={hs_kpis['latency_p50_ms']}ms")
 
-        # Baseline: Reference Raft (1 RTT crash ceiling)
+        # Baseline: Reference Raft (Crash-Fault-Tolerant reference: 1 RTT)
         raft = ReferenceRaftReplica("raft_0", n_nodes=3)
         raft_latencies = []
         for seq in range(1, n_tx_per_run + 1):
+            t_raft_start = time.perf_counter()
             raft.append_entries(1, [{"tx": seq}], seq)
-            lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0)
+            raft_proc_ms = (time.perf_counter() - t_raft_start) * 1000.0
+            lat = (1.0 * base_rtt_ms) + random.gauss(0, 2.0) + raft_proc_ms
             raft_latencies.append(lat)
 
         raft_kpis = compute_benchmark_kpis(
@@ -218,15 +231,15 @@ def run_pareto_sweep():
             total_cpu_time=1.0
         )
         raft_kpis["conflict_rate"] = c
-        results["raft"].append(raft_kpis)
-        print(f"  Raft (CFT):p50={raft_kpis['latency_p50_ms']}ms (1 RTT crash ceiling)")
+        results["raft_cft_reference"].append(raft_kpis)
+        print(f"  Raft CFT Reference:         p50={raft_kpis['latency_p50_ms']}ms")
 
     out_dir = os.path.abspath(os.path.join(AETHER_ROOT, "benchmarks"))
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "pareto_results.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
-    print(f"\nSaved Pareto Benchmark Results to: {out_path}")
+    print(f"\nSaved Hardened Pareto Benchmark Results to: {out_path}")
     return results
 
 

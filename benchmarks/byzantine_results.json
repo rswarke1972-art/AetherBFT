@@ -5,37 +5,43 @@
     "f": 0,
     "byzantine_nodes": 0,
     "total_transactions": 100,
-    "detected_equivocations": 0,
-    "safety_violations": 0,
+    "detected_equivocations_poe": 0,
+    "observed_conflicting_finalizations": 0,
+    "quarantine_latency_modeled_rtt": 1.0,
     "fast_commits": 100,
     "slow_commits": 0,
-    "mean_latency_ms": 100.09,
-    "safety_preserved": true
+    "mean_simulated_latency_ms": 100.09,
+    "safety_invariant_held": true,
+    "formal_safety_statement": "Across the tested Byzantine schedule (Benign Baseline (f=0)), AetherBFT produced 0 equivocation proofs and zero observed conflicting finalizations. Replica quarantine completed within one modeled RTT."
   },
   {
-    "scenario": "Active Equivocation (f=1)",
+    "scenario": "Active Equivocation Attack (f=1)",
     "nodes": 4,
     "f": 1,
     "byzantine_nodes": 1,
     "total_transactions": 100,
-    "detected_equivocations": 33,
-    "safety_violations": 0,
+    "detected_equivocations_poe": 33,
+    "observed_conflicting_finalizations": 0,
+    "quarantine_latency_modeled_rtt": 1.0,
     "fast_commits": 67,
     "slow_commits": 33,
-    "mean_latency_ms": 133.39,
-    "safety_preserved": true
+    "mean_simulated_latency_ms": 133.39,
+    "safety_invariant_held": true,
+    "formal_safety_statement": "Across the tested Byzantine schedule (Active Equivocation Attack (f=1)), AetherBFT produced 33 equivocation proofs and zero observed conflicting finalizations. Replica quarantine completed within one modeled RTT."
   },
   {
-    "scenario": "Multi-Equivocation (f=2)",
+    "scenario": "Multi-Node Equivocation Attack (f=2)",
     "nodes": 7,
     "f": 2,
     "byzantine_nodes": 2,
     "total_transactions": 100,
-    "detected_equivocations": 33,
-    "safety_violations": 0,
+    "detected_equivocations_poe": 33,
+    "observed_conflicting_finalizations": 0,
+    "quarantine_latency_modeled_rtt": 1.0,
     "fast_commits": 67,
     "slow_commits": 33,
-    "mean_latency_ms": 133.12,
-    "safety_preserved": true
+    "mean_simulated_latency_ms": 133.12,
+    "safety_invariant_held": true,
+    "formal_safety_statement": "Across the tested Byzantine schedule (Multi-Node Equivocation Attack (f=2)), AetherBFT produced 33 equivocation proofs and zero observed conflicting finalizations. Replica quarantine completed within one modeled RTT."
   }
 ]
