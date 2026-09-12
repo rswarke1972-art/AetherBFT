@@ -1,0 +1,41 @@
+[
+  {
+    "scenario": "Benign Baseline (f=0)",
+    "nodes": 1,
+    "f": 0,
+    "byzantine_nodes": 0,
+    "total_transactions": 100,
+    "detected_equivocations": 0,
+    "safety_violations": 0,
+    "fast_commits": 100,
+    "slow_commits": 0,
+    "mean_latency_ms": 100.09,
+    "safety_preserved": true
+  },
+  {
+    "scenario": "Active Equivocation (f=1)",
+    "nodes": 4,
+    "f": 1,
+    "byzantine_nodes": 1,
+    "total_transactions": 100,
+    "detected_equivocations": 33,
+    "safety_violations": 0,
+    "fast_commits": 67,
+    "slow_commits": 33,
+    "mean_latency_ms": 133.39,
+    "safety_preserved": true
+  },
+  {
+    "scenario": "Multi-Equivocation (f=2)",
+    "nodes": 7,
+    "f": 2,
+    "byzantine_nodes": 2,
+    "total_transactions": 100,
+    "detected_equivocations": 33,
+    "safety_violations": 0,
+    "fast_commits": 67,
+    "slow_commits": 33,
+    "mean_latency_ms": 133.12,
+    "safety_preserved": true
+  }
+]

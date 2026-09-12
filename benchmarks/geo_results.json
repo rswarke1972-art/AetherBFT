@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "samples_per_topology": 200,
+    "topologies": [
+      "LAN-Datacenter",
+      "WAN-Regional (US-East / US-West)",
+      "WAN-Transatlantic (US-East / EU-Central)",
+      "WAN-Global (US-East / AP-South)"
+    ]
+  },
+  "profiles": [
+    {
+      "topology": "LAN-Datacenter",
+      "base_rtt_ms": 2.0,
+      "aether_fast_p50": 2.02,
+      "aether_fast_p95": 2.45,
+      "aether_fast_p99": 19.36,
+      "aether_slow_p50": 4.0,
+      "aether_slow_p95": 4.89,
+      "pbft_p50": 6.09,
+      "pbft_p95": 15.37,
+      "hotstuff_p50": 6.01,
+      "hotstuff_p95": 7.18,
+      "raft_p50": 2.01,
+      "raft_p95": 2.34,
+      "aether_speedup_vs_pbft": 3.01,
+      "aether_speedup_vs_hotstuff": 2.97
+    },
+    {
+      "topology": "WAN-Regional (US-East / US-West)",
+      "base_rtt_ms": 75.0,
+      "aether_fast_p50": 75.18,
+      "aether_fast_p95": 80.99,
+      "aether_fast_p99": 91.15,
+      "aether_slow_p50": 151.18,
+      "aether_slow_p95": 161.62,
+      "pbft_p50": 225.91,
+      "pbft_p95": 239.97,
+      "hotstuff_p50": 224.98,
+      "hotstuff_p95": 239.06,
+      "raft_p50": 74.8,
+      "raft_p95": 80.21,
+      "aether_speedup_vs_pbft": 3.0,
+      "aether_speedup_vs_hotstuff": 2.99
+    },
+    {
+      "topology": "WAN-Transatlantic (US-East / EU-Central)",
+      "base_rtt_ms": 150.0,
+      "aether_fast_p50": 150.78,
+      "aether_fast_p95": 158.31,
+      "aether_fast_p99": 167.03,
+      "aether_slow_p50": 299.86,
+      "aether_slow_p95": 315.52,
+      "pbft_p50": 450.6,
+      "pbft_p95": 469.18,
+      "hotstuff_p50": 450.23,
+      "hotstuff_p95": 468.85,
+      "raft_p50": 149.81,
+      "raft_p95": 157.77,
+      "aether_speedup_vs_pbft": 2.99,
+      "aether_speedup_vs_hotstuff": 2.99
+    },
+    {
+      "topology": "WAN-Global (US-East / AP-South)",
+      "base_rtt_ms": 190.0,
+      "aether_fast_p50": 188.55,
+      "aether_fast_p95": 200.62,
+      "aether_fast_p99": 206.03,
+      "aether_slow_p50": 381.39,
+      "aether_slow_p95": 403.68,
+      "pbft_p50": 569.31,
+      "pbft_p95": 599.46,
+      "hotstuff_p50": 570.84,
+      "hotstuff_p95": 600.21,
+      "raft_p50": 190.03,
+      "raft_p95": 204.47,
+      "aether_speedup_vs_pbft": 3.02,
+      "aether_speedup_vs_hotstuff": 3.03
+    }
+  ]
+}

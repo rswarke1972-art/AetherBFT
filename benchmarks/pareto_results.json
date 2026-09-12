@@ -1,0 +1,283 @@
+{
+  "metadata": {
+    "num_nodes": 4,
+    "f": 1,
+    "tx_per_run": 120,
+    "base_rtt_ms": 100.0,
+    "conflict_rates": [
+      0.0,
+      0.05,
+      0.1,
+      0.25,
+      0.5
+    ]
+  },
+  "aether_bft": [
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 100.23,
+      "latency_p95_ms": 103.2,
+      "latency_p99_ms": 104.52,
+      "latency_mean_ms": 100.15,
+      "conflict_rate": 0.0
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 119,
+      "slow_commits": 1,
+      "fast_path_success_rate": 0.9917,
+      "rollback_amplification": 0.0083,
+      "recovery_cost_ratio": 0.0003,
+      "latency_p50_ms": 99.73,
+      "latency_p95_ms": 103.76,
+      "latency_p99_ms": 106.97,
+      "latency_mean_ms": 100.65,
+      "conflict_rate": 0.05
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 114,
+      "slow_commits": 6,
+      "fast_path_success_rate": 0.95,
+      "rollback_amplification": 0.05,
+      "recovery_cost_ratio": 0.0003,
+      "latency_p50_ms": 100.35,
+      "latency_p95_ms": 110.8,
+      "latency_p99_ms": 202.35,
+      "latency_mean_ms": 105.05,
+      "conflict_rate": 0.1
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 90,
+      "slow_commits": 30,
+      "fast_path_success_rate": 0.75,
+      "rollback_amplification": 0.25,
+      "recovery_cost_ratio": 0.0013,
+      "latency_p50_ms": 101.07,
+      "latency_p95_ms": 201.85,
+      "latency_p99_ms": 206.55,
+      "latency_mean_ms": 125.11,
+      "conflict_rate": 0.25
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 66,
+      "slow_commits": 54,
+      "fast_path_success_rate": 0.55,
+      "rollback_amplification": 0.45,
+      "recovery_cost_ratio": 0.0024,
+      "latency_p50_ms": 102.27,
+      "latency_p95_ms": 204.57,
+      "latency_p99_ms": 206.43,
+      "latency_mean_ms": 145.34,
+      "conflict_rate": 0.5
+    }
+  ],
+  "pbft": [
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.42,
+      "latency_p95_ms": 307.26,
+      "latency_p99_ms": 309.03,
+      "latency_mean_ms": 300.25,
+      "conflict_rate": 0.0
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 299.65,
+      "latency_p95_ms": 306.98,
+      "latency_p99_ms": 308.62,
+      "latency_mean_ms": 299.69,
+      "conflict_rate": 0.05
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.03,
+      "latency_p95_ms": 305.49,
+      "latency_p99_ms": 308.93,
+      "latency_mean_ms": 299.91,
+      "conflict_rate": 0.1
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.26,
+      "latency_p95_ms": 307.35,
+      "latency_p99_ms": 309.36,
+      "latency_mean_ms": 299.95,
+      "conflict_rate": 0.25
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 299.86,
+      "latency_p95_ms": 305.83,
+      "latency_p99_ms": 308.25,
+      "latency_mean_ms": 299.93,
+      "conflict_rate": 0.5
+    }
+  ],
+  "hotstuff": [
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 299.67,
+      "latency_p95_ms": 305.09,
+      "latency_p99_ms": 307.67,
+      "latency_mean_ms": 299.67,
+      "conflict_rate": 0.0
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.23,
+      "latency_p95_ms": 306.02,
+      "latency_p99_ms": 307.13,
+      "latency_mean_ms": 300.11,
+      "conflict_rate": 0.05
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 299.52,
+      "latency_p95_ms": 305.36,
+      "latency_p99_ms": 308.05,
+      "latency_mean_ms": 299.57,
+      "conflict_rate": 0.1
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.59,
+      "latency_p95_ms": 307.68,
+      "latency_p99_ms": 308.84,
+      "latency_mean_ms": 300.77,
+      "conflict_rate": 0.25
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 0,
+      "slow_commits": 120,
+      "fast_path_success_rate": 0.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 300.26,
+      "latency_p95_ms": 305.5,
+      "latency_p99_ms": 306.55,
+      "latency_mean_ms": 300.32,
+      "conflict_rate": 0.5
+    }
+  ],
+  "raft": [
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 100.02,
+      "latency_p95_ms": 103.48,
+      "latency_p99_ms": 104.13,
+      "latency_mean_ms": 100.04,
+      "conflict_rate": 0.0
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 99.66,
+      "latency_p95_ms": 103.01,
+      "latency_p99_ms": 103.48,
+      "latency_mean_ms": 99.77,
+      "conflict_rate": 0.05
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 99.69,
+      "latency_p95_ms": 103.5,
+      "latency_p99_ms": 105.29,
+      "latency_mean_ms": 100.05,
+      "conflict_rate": 0.1
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 99.55,
+      "latency_p95_ms": 102.95,
+      "latency_p99_ms": 103.49,
+      "latency_mean_ms": 99.74,
+      "conflict_rate": 0.25
+    },
+    {
+      "total_txs": 120,
+      "fast_commits": 120,
+      "slow_commits": 0,
+      "fast_path_success_rate": 1.0,
+      "rollback_amplification": 0.0,
+      "recovery_cost_ratio": 0.0,
+      "latency_p50_ms": 100.53,
+      "latency_p95_ms": 104.19,
+      "latency_p99_ms": 105.64,
+      "latency_mean_ms": 100.34,
+      "conflict_rate": 0.5
+    }
+  ]
+}

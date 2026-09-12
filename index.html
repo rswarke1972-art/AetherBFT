@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AetherBFT: Dual-Path Byzantine Fault Tolerant Consensus Engine</title>
+  <meta name="description" content="Interactive 60 FPS Simulation & Benchmarks for AetherBFT: Dual-Path Speculative Fast-Path with MVCC Logical Rollback.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Navigation & Global HUD -->
+  <header class="navbar">
+    <div class="nav-left">
+      <div class="logo-shield">
+        <span class="logo-glyph">⚡</span>
+      </div>
+      <div>
+        <h1 class="logo-title">AetherBFT <span class="badge-tag">v1.0.0</span></h1>
+        <p class="logo-subtitle">Dual-Path Speculative BFT Consensus &bull; 1-RTT Fast Path &bull; MVCC Rollback</p>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="hud-stat">
+        <span class="hud-label">ENGINE STATUS</span>
+        <span class="hud-value status-active" id="hud-status">ACTIVE &bull; LINEARIZABLE</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">CLUSTER QUORUM</span>
+        <span class="hud-value" id="hud-quorum">n=4, f=1 (Q_fast=4, Q_slow=3)</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">FRAME RATE</span>
+        <span class="hud-value" id="hud-fps">60.0 FPS</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    <!-- Left Column: Geo Canvas & DAG Visualization -->
+    <section class="simulation-view">
+      <!-- Geo Simulation Panel -->
+      <div class="glass-card canvas-card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <span class="pulse-dot"></span>
+            <h2>Geo-Distributed Consensus Network (Multi-Region Topology)</h2>
+          </div>
+          <div class="canvas-legend">
+            <span class="legend-item"><span class="legend-dot dot-fast"></span> Fast Path (1 RTT)</span>
+            <span class="legend-item"><span class="legend-dot dot-slow"></span> Slow Fallback (2 RTT)</span>
+            <span class="legend-item"><span class="legend-dot dot-byz"></span> Byzantine Equivocation</span>
+            <span class="legend-item"><span class="legend-dot dot-qc"></span> Quorum Certificate</span>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="geoCanvas" width="900" height="420"></canvas>
+          <div class="canvas-overlay-status" id="canvas-overlay-status">
+            ROUTE: <span id="route-indicator" class="route-fast">OPTIMISTIC FAST PATH (1 RTT)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ephemeral MVCC Version Tree DAG Visualizer -->
+      <div class="glass-card dag-card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <span class="icon-cube">⑂</span>
+            <h2>Ephemeral MVCC Version Tree DAG &bull; Qualified Logical Rollback</h2>
+          </div>
+          <div class="dag-legend">
+            <span class="dag-tag tag-finalized">Canonical Finalized (Committed)</span>
+            <span class="dag-tag tag-tentative">Speculative Tentative (Non-Linearizable)</span>
+            <span class="dag-tag tag-aborted">Rolled Back (Pruned Branch)</span>
+          </div>
+        </div>
+        <div class="dag-wrapper">
+          <canvas id="dagCanvas" width="900" height="180"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Control Deck, Telemetry & Logs -->
+    <aside class="control-view">
+      <!-- Control Deck -->
+      <div class="glass-card control-card">
+        <div class="card-header">
+          <h2>Interactive Control Deck</h2>
+          <span class="chip-live">LIVE</span>
+        </div>
+
+        <div class="controls-grid">
+          <!-- Conflict Rate Slider -->
+          <div class="control-group">
+            <div class="control-header">
+              <label for="slider-conflict">Dependency Conflict Rate (C)</label>
+              <span class="slider-value" id="val-conflict">10%</span>
+            </div>
+            <input type="range" id="slider-conflict" min="0" max="50" step="5" value="10">
+            <div class="range-ticks">
+              <span>0% (Disjoint)</span>
+              <span>25%</span>
+              <span>50% (High Contention)</span>
+            </div>
+          </div>
+
+          <!-- Network Topology Select -->
+          <div class="control-group">
+            <label for="select-topology">Network Latency Topology Profile</label>
+            <select id="select-topology" class="select-field">
+              <option value="lan">LAN Datacenter (RTT = 2 ms)</option>
+              <option value="wan-regional">WAN-Regional: US-East / US-West (RTT = 75 ms)</option>
+              <option value="wan-transatlantic" selected>WAN-Transatlantic: US-East / EU-Central (RTT = 150 ms)</option>
+              <option value="wan-global">WAN-Global: US-East / AP-South (RTT = 190 ms)</option>
+            </select>
+          </div>
+
+          <!-- Byzantine Adversary Switch -->
+          <div class="control-group switch-group">
+            <div class="switch-label-wrap">
+              <span class="switch-title">Inject Byzantine Equivocator (Node 1)</span>
+              <span class="switch-desc">Tests Proof of Equivocation (PoE) & Quorum Quarantine</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-byzantine">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button id="btn-inject-tx" class="btn btn-primary">⚡ Propose Transaction</button>
+            <button id="btn-conflict-tx" class="btn btn-warning">🔥 Force Key Conflict</button>
+            <button id="btn-toggle-traffic" class="btn btn-secondary">▶ Stream Traffic (10 tx/s)</button>
+            <button id="btn-reset" class="btn btn-ghost">↺ Reset State</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Telemetry Counters -->
+      <div class="glass-card telemetry-card">
+        <div class="card-header">
+          <h2>Consensus Telemetry & Metrics</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-number color-cyan" id="stat-fc">95.0%</span>
+            <span class="stat-label">Fast Success F(C)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number color-green" id="stat-latency">150 ms</span>
+            <span class="stat-label">Commit Latency (p50)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number color-amber" id="stat-ra">0.05</span>
+            <span class="stat-label">Rollback Amp. (RA)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number color-purple" id="stat-commits">0</span>
+            <span class="stat-label">Total Commits</span>
+          </div>
+        </div>
+
+        <div class="mini-odometer">
+          <div class="odo-row">
+            <span>Fast-Path Commits (1 RTT):</span>
+            <strong id="odo-fast" class="color-green">0</strong>
+          </div>
+          <div class="odo-row">
+            <span>Slow-Path Fallbacks (2 RTT):</span>
+            <strong id="odo-slow" class="color-amber">0</strong>
+          </div>
+          <div class="odo-row">
+            <span>Proof of Equivocation Quarantines:</span>
+            <strong id="odo-byz" class="color-red">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Consensus Event Log -->
+      <div class="glass-card log-card">
+        <div class="card-header">
+          <h2>Certified Event Stream</h2>
+          <span class="log-clear" id="btn-clear-log">Clear</span>
+        </div>
+        <div class="event-log-terminal" id="event-log">
+          <div class="log-entry log-sys">[00:00:00.000] Cluster initialized: 4 nodes, f=1 Byzantine resilience bound active.</div>
+          <div class="log-entry log-fast">[00:00:00.010] Node 0 elected primary proposer. Optimistic fast quorum Q_fast=4.</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Empirical Benchmark Matrix Section -->
+  <section class="benchmarks-section">
+    <div class="section-header">
+      <div>
+        <span class="section-badge">EMPIRICAL VALIDATION</span>
+        <h2 class="section-title">AetherBFT Experimental Benchmark Suite</h2>
+        <p class="section-desc">Empirical comparisons across Conflict Rates, Byzantine Attacks, and Multi-Region Topologies.</p>
+      </div>
+      <div class="bench-tabs">
+        <button class="bench-tab active" data-tab="pareto">Pareto Conflict Sweep</button>
+        <button class="bench-tab" data-tab="geo">Geo-Distributed Speedup</button>
+        <button class="bench-tab" data-tab="byzantine">Byzantine Equivocation</button>
+        <button class="bench-tab" data-tab="theory">Theoretical Invariants</button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Pareto Conflict Sweep -->
+    <div class="tab-pane active" id="pane-pareto">
+      <div class="glass-card bench-card">
+        <div class="bench-table-wrap">
+          <table class="bench-table">
+            <thead>
+              <tr>
+                <th>Conflict Rate C</th>
+                <th>Fast Success F(C)</th>
+                <th>Rollback Amp. RA</th>
+                <th>AetherBFT p50</th>
+                <th>PBFT p50 (3 RTT)</th>
+                <th>HotStuff p50 (3 RTT)</th>
+                <th>Raft CFT Ceiling</th>
+                <th>Aether Speedup</th>
+              </tr>
+            </thead>
+            <tbody id="pareto-table-body">
+              <tr>
+                <td><strong>0% (Disjoint)</strong></td>
+                <td><span class="badge-green">100.0%</span></td>
+                <td>0.000</td>
+                <td><strong>100.2 ms</strong></td>
+                <td>300.4 ms</td>
+                <td>299.7 ms</td>
+                <td>100.0 ms</td>
+                <td><span class="badge-cyan">3.00x vs PBFT</span></td>
+              </tr>
+              <tr>
+                <td><strong>5% Contention</strong></td>
+                <td><span class="badge-green">99.2%</span></td>
+                <td>0.008</td>
+                <td><strong>99.7 ms</strong></td>
+                <td>299.7 ms</td>
+                <td>300.2 ms</td>
+                <td>99.7 ms</td>
+                <td><span class="badge-cyan">3.00x vs PBFT</span></td>
+              </tr>
+              <tr>
+                <td><strong>10% Contention</strong></td>
+                <td><span class="badge-green">95.0%</span></td>
+                <td>0.050</td>
+                <td><strong>100.4 ms</strong></td>
+                <td>300.0 ms</td>
+                <td>299.5 ms</td>
+                <td>99.7 ms</td>
+                <td><span class="badge-cyan">2.99x vs PBFT</span></td>
+              </tr>
+              <tr>
+                <td><strong>25% Contention</strong></td>
+                <td><span class="badge-amber">75.0%</span></td>
+                <td>0.250</td>
+                <td><strong>101.1 ms</strong></td>
+                <td>300.3 ms</td>
+                <td>300.6 ms</td>
+                <td>99.6 ms</td>
+                <td><span class="badge-cyan">2.97x vs PBFT</span></td>
+              </tr>
+              <tr>
+                <td><strong>50% (High Contention)</strong></td>
+                <td><span class="badge-amber">55.0%</span></td>
+                <td>0.450</td>
+                <td><strong>102.3 ms</strong></td>
+                <td>299.9 ms</td>
+                <td>300.3 ms</td>
+                <td>100.5 ms</td>
+                <td><span class="badge-cyan">2.93x vs PBFT</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="bench-footnote">&ast; Tested across n=4 nodes, f=1 Byzantine fault tolerance bound, 100ms base RTT, 120 transactions per sweep.</p>
+      </div>
+    </div>
+
+    <!-- Tab 2: Geo-Distributed Speedup -->
+    <div class="tab-pane" id="pane-geo">
+      <div class="glass-card bench-card">
+        <div class="bench-table-wrap">
+          <table class="bench-table">
+            <thead>
+              <tr>
+                <th>Multi-Region Topology</th>
+                <th>Base RTT</th>
+                <th>Aether Fast (1 RTT)</th>
+                <th>Aether Slow (2 RTT)</th>
+                <th>Classical PBFT (3 RTT)</th>
+                <th>Modern HotStuff (3 RTT)</th>
+                <th>Net Speedup</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>LAN Datacenter</strong></td>
+                <td>2.0 ms</td>
+                <td><span class="badge-green">2.02 ms</span></td>
+                <td>4.00 ms</td>
+                <td>6.09 ms</td>
+                <td>6.01 ms</td>
+                <td><span class="badge-cyan">3.01x Speedup</span></td>
+              </tr>
+              <tr>
+                <td><strong>WAN-Regional (US-East / West)</strong></td>
+                <td>75.0 ms</td>
+                <td><span class="badge-green">75.18 ms</span></td>
+                <td>151.18 ms</td>
+                <td>225.91 ms</td>
+                <td>224.98 ms</td>
+                <td><span class="badge-cyan">3.00x Speedup</span></td>
+              </tr>
+              <tr>
+                <td><strong>WAN-Transatlantic (US / EU)</strong></td>
+                <td>150.0 ms</td>
+                <td><span class="badge-green">150.78 ms</span></td>
+                <td>299.86 ms</td>
+                <td>450.60 ms</td>
+                <td>450.23 ms</td>
+                <td><span class="badge-cyan">2.99x Speedup</span></td>
+              </tr>
+              <tr>
+                <td><strong>WAN-Global (US-East / AP-South)</strong></td>
+                <td>190.0 ms</td>
+                <td><span class="badge-green">188.55 ms</span></td>
+                <td>381.39 ms</td>
+                <td>569.31 ms</td>
+                <td>570.84 ms</td>
+                <td><span class="badge-cyan">3.02x Speedup</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Byzantine Equivocation -->
+    <div class="tab-pane" id="pane-byzantine">
+      <div class="glass-card bench-card">
+        <div class="bench-table-wrap">
+          <table class="bench-table">
+            <thead>
+              <tr>
+                <th>Adversarial Attack Scenario</th>
+                <th>Nodes n</th>
+                <th>Byzantine Nodes f</th>
+                <th>Equivocation Proofs (PoE)</th>
+                <th>Safety Violations</th>
+                <th>Linearizability</th>
+                <th>Mean Latency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Benign Baseline</strong></td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td><span class="badge-green">0 Violations</span></td>
+                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td>100.09 ms</td>
+              </tr>
+              <tr>
+                <td><strong>Active Equivocation Attack</strong></td>
+                <td>4</td>
+                <td>1</td>
+                <td><span class="badge-red">33 Generated</span></td>
+                <td><span class="badge-green">0 Violations</span></td>
+                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td>133.39 ms (Slow fallback)</td>
+              </tr>
+              <tr>
+                <td><strong>Multi-Node Equivocation</strong></td>
+                <td>7</td>
+                <td>2</td>
+                <td><span class="badge-red">33 Generated</span></td>
+                <td><span class="badge-green">0 Violations</span></td>
+                <td><span class="badge-green">Strictly Preserved</span></td>
+                <td>133.12 ms (Slow fallback)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Theoretical Invariants -->
+    <div class="tab-pane" id="pane-theory">
+      <div class="glass-card bench-card theory-card">
+        <div class="theory-grid">
+          <div class="theory-box">
+            <h3>Invariant 1: Unconditional Safety</h3>
+            <p>Under asynchronous network delay with $n \ge 3f + 1$, no two conflicting transactions can obtain Quorum Certificates at the same slot. Fast path requires $3f+1$, intersecting any slow quorum $2f+1$ in at least $f+1$ honest nodes.</p>
+          </div>
+          <div class="theory-box">
+            <h3>Invariant 2: Liveness after GST</h3>
+            <p>Under partial synchrony, once Global Stabilization Time (GST) is reached, non-conflicting proposals finalize in 1 RTT, and conflicting proposals finalize via 2-phase slow path in 2 RTTs under Pacemaker view change bounds.</p>
+          </div>
+          <div class="theory-box">
+            <h3>Invariant 3: Speculative Non-Linearizability</h3>
+            <p>Speculative results returned during the 1-RTT flight window are explicitly tagged <code>TENTATIVE</code> and isolated in ephemeral MVCC branches. Read API strictly distinguishes tentative uncommitted reads from linearizable finalized reads.</p>
+          </div>
+          <div class="theory-box">
+            <h3>Invariant 4: Qualified O(1) Logical Rollback</h3>
+            <p>Branch invalidation redirects root pointers in $O(1)$ operations without cluster-wide stalls. Physical node memory pruning and garbage collection occur asynchronously off the consensus critical path.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2026 Sahil Warke &bull; Algorithmic Research Portfolio &bull; Algorithm 07: AetherBFT</p>
+      <div class="footer-links">
+        <a href="https://github.com/rswarke1972-art/AetherBFT" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="https://github.com/rswarke1972-art/AetherBFT/blob/main/paper/IEEE_AetherBFT_Manuscript.md" target="_blank" rel="noopener">IEEE Research Manuscript</a>
+        <a href="https://github.com/rswarke1972-art/AetherBFT/blob/main/paper/patentability_and_prior_art_review.md" target="_blank" rel="noopener">Prior Art & Patent Claims</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
