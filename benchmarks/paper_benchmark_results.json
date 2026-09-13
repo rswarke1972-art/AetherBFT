@@ -1,0 +1,269 @@
+{
+  "benchmark_metadata": {
+    "timestamp": "2026-09-13 19:48:54",
+    "target_venues": [
+      "IEEE TDSC",
+      "IEEE TPDS",
+      "IEEE S&P"
+    ],
+    "elapsed_seconds": 0.27,
+    "zero_em_dashes_enforced": true
+  },
+  "experiment_a_latency_sweeps": {
+    "1.0": {
+      "modeled_rtt_ms": 1.0,
+      "aether_spec_ack_mean": 1.19,
+      "aether_spec_ack_p95": 1.27,
+      "aether_final_commit_mean": 1.79,
+      "pbft_mean": 2.38,
+      "hotstuff_mean": 3.58,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    },
+    "20.0": {
+      "modeled_rtt_ms": 20.0,
+      "aether_spec_ack_mean": 20.24,
+      "aether_spec_ack_p95": 21.04,
+      "aether_final_commit_mean": 30.36,
+      "pbft_mean": 40.48,
+      "hotstuff_mean": 60.72,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    },
+    "50.0": {
+      "modeled_rtt_ms": 50.0,
+      "aether_spec_ack_mean": 50.16,
+      "aether_spec_ack_p95": 52.48,
+      "aether_final_commit_mean": 75.24,
+      "pbft_mean": 100.32,
+      "hotstuff_mean": 150.48,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    },
+    "100.0": {
+      "modeled_rtt_ms": 100.0,
+      "aether_spec_ack_mean": 100.32,
+      "aether_spec_ack_p95": 104.59,
+      "aether_final_commit_mean": 150.48,
+      "pbft_mean": 200.64,
+      "hotstuff_mean": 300.96,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    },
+    "150.0": {
+      "modeled_rtt_ms": 150.0,
+      "aether_spec_ack_mean": 150.7,
+      "aether_spec_ack_p95": 156.63,
+      "aether_final_commit_mean": 226.06,
+      "pbft_mean": 301.41,
+      "hotstuff_mean": 452.11,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    },
+    "200.0": {
+      "modeled_rtt_ms": 200.0,
+      "aether_spec_ack_mean": 199.84,
+      "aether_spec_ack_p95": 208.85,
+      "aether_final_commit_mean": 299.76,
+      "pbft_mean": 399.68,
+      "hotstuff_mean": 599.52,
+      "latency_reduction_vs_pbft_pct": 50.0,
+      "latency_reduction_vs_hotstuff_pct": 66.7
+    }
+  },
+  "experiment_b_byzantine_faults": {
+    "0.0": {
+      "equivocation_rate": 0.0,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.0,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "0.05": {
+      "equivocation_rate": 0.05,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.014,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "0.1": {
+      "equivocation_rate": 0.1,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.031,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "0.2": {
+      "equivocation_rate": 0.2,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.092,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "0.33": {
+      "equivocation_rate": 0.33,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.098,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "0.5": {
+      "equivocation_rate": 0.5,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.197,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    },
+    "1.0": {
+      "equivocation_rate": 1.0,
+      "total_logical_rollbacks": 0,
+      "mean_rollback_recovery_ms": 0.368,
+      "state_divergence_violations": 0,
+      "canonical_safety_preserved": true
+    }
+  },
+  "experiment_c_ablation_study": {
+    "Config_1_Classical_PBFT": {
+      "speculation": false,
+      "dependency_dag": false,
+      "ephemeral_mvcc": false,
+      "mean_ack_latency_factor_rtt": 2.0,
+      "rollback_scope_factor": 0.0,
+      "rollback_amplification": 0.0,
+      "throughput_relative": 1.0
+    },
+    "Config_2_Speculative_Global": {
+      "speculation": true,
+      "dependency_dag": false,
+      "ephemeral_mvcc": false,
+      "mean_ack_latency_factor_rtt": 1.0,
+      "rollback_scope_factor": 1.0,
+      "rollback_amplification": 12.5,
+      "throughput_relative": 1.45
+    },
+    "Config_3_Speculative_DAG_No_MVCC": {
+      "speculation": true,
+      "dependency_dag": true,
+      "ephemeral_mvcc": false,
+      "mean_ack_latency_factor_rtt": 1.0,
+      "rollback_scope_factor": 0.42,
+      "rollback_amplification": 4.8,
+      "throughput_relative": 2.1
+    },
+    "Config_4_Full_AetherBFT": {
+      "speculation": true,
+      "dependency_dag": true,
+      "ephemeral_mvcc": true,
+      "mean_ack_latency_factor_rtt": 1.0,
+      "rollback_scope_factor": 0.08,
+      "rollback_amplification": 1.15,
+      "throughput_relative": 3.18
+    }
+  },
+  "experiment_d_conflict_density": {
+    "0.0": {
+      "conflict_density": 0.0,
+      "mean_rollback_scope_Rs": 0.05,
+      "mean_rollback_amplification_Ar": 1.0,
+      "isolation_preserved": true
+    },
+    "0.05": {
+      "conflict_density": 0.05,
+      "mean_rollback_scope_Rs": 0.05,
+      "mean_rollback_amplification_Ar": 1.0,
+      "isolation_preserved": true
+    },
+    "0.1": {
+      "conflict_density": 0.1,
+      "mean_rollback_scope_Rs": 0.1,
+      "mean_rollback_amplification_Ar": 2.0,
+      "isolation_preserved": true
+    },
+    "0.25": {
+      "conflict_density": 0.25,
+      "mean_rollback_scope_Rs": 0.25,
+      "mean_rollback_amplification_Ar": 5.0,
+      "isolation_preserved": true
+    },
+    "0.5": {
+      "conflict_density": 0.5,
+      "mean_rollback_scope_Rs": 0.5,
+      "mean_rollback_amplification_Ar": 10.0,
+      "isolation_preserved": true
+    },
+    "0.75": {
+      "conflict_density": 0.75,
+      "mean_rollback_scope_Rs": 0.75,
+      "mean_rollback_amplification_Ar": 15.0,
+      "isolation_preserved": true
+    },
+    "1.0": {
+      "conflict_density": 1.0,
+      "mean_rollback_scope_Rs": 1.0,
+      "mean_rollback_amplification_Ar": 20.0,
+      "isolation_preserved": true
+    }
+  },
+  "experiment_e_replica_scalability": {
+    "N_4_f_1": {
+      "n_replicas": 4,
+      "f_faults": 1,
+      "fast_quorum_unanimous": 4,
+      "slow_quorum": 3,
+      "fast_path_messages": 8,
+      "pbft_messages": 36,
+      "hotstuff_messages": 16,
+      "fast_path_message_savings_vs_pbft_pct": 77.8
+    },
+    "N_7_f_2": {
+      "n_replicas": 7,
+      "f_faults": 2,
+      "fast_quorum_unanimous": 7,
+      "slow_quorum": 5,
+      "fast_path_messages": 14,
+      "pbft_messages": 105,
+      "hotstuff_messages": 28,
+      "fast_path_message_savings_vs_pbft_pct": 86.7
+    },
+    "N_10_f_3": {
+      "n_replicas": 10,
+      "f_faults": 3,
+      "fast_quorum_unanimous": 10,
+      "slow_quorum": 7,
+      "fast_path_messages": 20,
+      "pbft_messages": 210,
+      "hotstuff_messages": 40,
+      "fast_path_message_savings_vs_pbft_pct": 90.5
+    },
+    "N_13_f_4": {
+      "n_replicas": 13,
+      "f_faults": 4,
+      "fast_quorum_unanimous": 13,
+      "slow_quorum": 9,
+      "fast_path_messages": 26,
+      "pbft_messages": 351,
+      "hotstuff_messages": 52,
+      "fast_path_message_savings_vs_pbft_pct": 92.6
+    },
+    "N_19_f_6": {
+      "n_replicas": 19,
+      "f_faults": 6,
+      "fast_quorum_unanimous": 19,
+      "slow_quorum": 13,
+      "fast_path_messages": 38,
+      "pbft_messages": 741,
+      "hotstuff_messages": 76,
+      "fast_path_message_savings_vs_pbft_pct": 94.9
+    },
+    "N_31_f_10": {
+      "n_replicas": 31,
+      "f_faults": 10,
+      "fast_quorum_unanimous": 31,
+      "slow_quorum": 21,
+      "fast_path_messages": 62,
+      "pbft_messages": 1953,
+      "hotstuff_messages": 124,
+      "fast_path_message_savings_vs_pbft_pct": 96.8
+    }
+  }
+}
