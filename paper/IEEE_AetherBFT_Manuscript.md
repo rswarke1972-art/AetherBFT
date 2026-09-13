@@ -434,6 +434,18 @@ This paper presented **AetherBFT**, a dual-path Byzantine Fault Tolerant replica
 
 ---
 
+### X. Acknowledgment
+
+#### Disclosure of Generative Artificial Intelligence (AI) Assistance
+In accordance with IEEE guidelines on the use of Artificial Intelligence (AI)-Generated Content in Conference and Periodical submissions, the author discloses that generative artificial intelligence systems, specifically Google DeepMind Antigravity / Gemini [29] and OpenAI ChatGPT [30], were utilized during the technical preparation of this manuscript.
+
+Specifically, generative AI assistance was employed for:
+1. Drafting and structuring initial Markdown and LaTeX document templates (`aetherbft.tex`).
+2. Assisting with the implementation of automated invariant verification test suites (`tests/test_invariants_and_conflict_matrix.py`) and simulation runner scripts.
+3. Phrasing refinement, typography linting, and bibliographic reference cross-linking.
+
+The author conceived the underlying AetherBFT dual-path consensus architecture, formulated all theoretical definitions, invariants, lemmas, and theorems, verified the integrity of the formal state-transition proofs, conducted and evaluated all empirical benchmark experiments, and takes full and sole intellectual, legal, and ethical responsibility for the veracity, originality, and conclusions presented in this work.
+
 ### References
 
 - [1] L. Lamport, R. Shostak, and M. Pease, "The Byzantine Generals Problem," *ACM Transactions on Programming Languages and Systems (TOPLAS)*, vol. 4, no. 3, pp. 382-401, 1982.
@@ -464,3 +476,5 @@ This paper presented **AetherBFT**, a dual-path Byzantine Fault Tolerant replica
 - [26] T. Distler, C. Cachin, and R. Kapitza, "Resource-Efficient Byzantine Fault Tolerance," *IEEE Transactions on Computers*, vol. 65, no. 9, pp. 2807-2819, 2016.
 - [27] A. Bessani, J. Sousa, and E. Alchieri, "State Machine Replication for the Masses with BFT-SMaRt," in *Proc. 44th IEEE/IFIP DSN*, 2014, pp. 355-362.
 - [28] C. Stathakopoulou, T. David, M. Pavlovic, and M. Vukoli{\'c}, "Mir-BFT: High-Throughput BFT for Blockchains," *IEEE Transactions on Dependable and Secure Computing*, vol. 19, no. 5, pp. 3376-3389, 2022.
+- [29] Google DeepMind, "Google Antigravity: Advanced Agentic AI and Research System," Gemini Model Family, 2026. [Online]. Available: https://deepmind.google
+- [30] OpenAI, "ChatGPT: Large Language Model," GPT-4o, 2024. [Online]. Available: https://openai.com
