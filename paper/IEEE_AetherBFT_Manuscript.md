@@ -2,9 +2,9 @@
 
 **Author:** Sahil Rajesh Warke  
 **Affiliation:** Independent Research in Distributed Systems and Algorithmic Consensus  
-**Target Venue:** IEEE Transactions on Dependable and Secure Computing (TDSC) / IEEE S&P  
+**Target Venue:** IEEE Transactions on Dependable and Secure Computing (TDSC)  
 **Date:** September 2026  
-**Document ID:** IEEE-TDSC-2026-AETHERBFT-V2  
+**Document ID:** IEEE-TDSC-2026-AETHERBFT  
 
 ---
 
@@ -434,7 +434,7 @@ This paper presented **AetherBFT**, a dual-path Byzantine Fault Tolerant replica
 
 ---
 
-### X. Acknowledgment
+### Acknowledgment
 
 #### Disclosure of Generative Artificial Intelligence (AI) Assistance
 In accordance with IEEE guidelines on the use of Artificial Intelligence (AI)-Generated Content in Conference and Periodical submissions, the author discloses that generative artificial intelligence systems, specifically Google DeepMind Antigravity / Gemini [29] and OpenAI ChatGPT [30], were utilized during the technical preparation of this manuscript.
