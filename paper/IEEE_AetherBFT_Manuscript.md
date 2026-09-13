@@ -27,7 +27,7 @@ To circumvent multi-phase latency, optimistic protocols such as Zyzzyva [5] intr
 
 #### C. Core Research Question
 This paper addresses the following fundamental systems research question:
-> *Can dependency-aware speculative execution with isolated MVCC branch trees reduce speculative acknowledgment latency toward one network RTT while preserving canonical-state safety and bounded logical rollback under Byzantine equivocation?*
+> *Can dependency-aware speculative execution with isolated MVCC branch trees reduce speculative acknowledgment latency toward one network RTT while preserving canonical-state safety and O(1) logical branch abandonment under Byzantine equivocation?*
 
 #### D. Primary Contributions
 This paper establishes four primary contributions:
@@ -123,10 +123,10 @@ If a leader fails or equivocates:
 
 ### V. Theoretical Analysis and Formal Proofs
 
-To provide a mathematically rigorous analysis, this section explicitly formalizes the system assumptions, structural invariants, foundational lemmas, and core theorems governing AetherBFT.
+To provide an academically rigorous theoretical foundation, this section formalizes the system assumptions, operational invariants, foundational lemmas, and core theorems governing AetherBFT.
 
 #### A. Explicit Protocol Assumptions
-Table II defines the complete set of assumptions required for safety, liveness, and complexity guarantees.
+Table II defines the complete assumption ledger required for safety, liveness, and complexity guarantees.
 
 **TABLE II: Explicit Protocol Assumptions for AetherBFT**
 
@@ -145,19 +145,22 @@ Table II defines the complete set of assumptions required for safety, liveness, 
 
 #### B. Foundational Protocol Invariants
 
-**Invariant 1 (Honest Replica Non-Equivocation):**
-Let $R_i$ be any honest replica ($R_i \in \mathcal{H}$). For any view $v$, sequence slot $s$, and distinct digests $d_1 \ne d_2$:
+**Invariant 1 (Persistent Slot Registry Non-Equivocation):**
+Let $R_i$ be an honest replica ($R_i \in \mathcal{H}$). For any view $v$, sequence slot $s$, and distinct digests $d_1 \ne d_2$:
 $$R_i \in \mathcal{H} \implies \neg \left[ \operatorname{Sign}_i(v, s, d_1) \land \operatorname{Sign}_i(v, s, d_2) \right]$$
-*Justification:* Directly enforced by the slot registry check in `can_sign_proposal()`:
-`if slot in self.signed_slots and self.signed_slots[slot] != digest: return False`.
+*Operational Mechanism:* Honest replicas maintain a persistent slot registry `signed_slots[(v, s)] = d`. When evaluating proposal $d'$, `can_sign_proposal()` enforces:
+`if (v, s) in self.signed_slots and self.signed_slots[(v, s)] != d': return False`.
+This rule applies equally whether the prior signature was emitted for a speculative fast proposal or a slow Prepare proposal.
 
-**Invariant 2 (Canonical Monotonicity and Non-Reversibility):**
-Let $S_{\text{final}}^{(i)}(t)$ denote the canonical finalized state of replica $R_i$ at time $t$. Then:
-1. *Commit Validity:* A replica transitions $S_{\text{final}}^{(i)}(t+1) = S_{\text{final}}^{(i)}(t) \oplus d$ only when $d$ is verified by a valid Quorum Certificate.
-2. *Non-Reversibility of Finality:* $\text{FINALIZED} \not\to \text{ABORTED}$. Canonical state is immutable to subsequent consensus failures or speculative aborts.
-3. *Aborted Version Quarantine:* An aborted version node cannot itself become finalized: $\text{ABORTED} \not\to \text{FINALIZED}$. If a transaction payload is retried, it must enter consensus through an entirely distinct proposal and version node.
-4. *Rollback Independence:* For any speculative branch $b$:
-   $$\operatorname{Rollback}(b) \implies S_{\text{final}}^{(i)}(t+1) \equiv S_{\text{final}}^{(i)}(t)$$
+**Invariant 2 (Prefix-Monotonic Finalized Log and Canonical State Isolation):**
+Let $\mathcal{L}_{\text{final}}^{(i)}(t) = \langle (s_1, d_1), (s_2, d_2), \dots \rangle$ denote the sequence of certified slot decisions committed by honest replica $R_i$ up to time $t$, with canonical state derived via deterministic sequential fold: $S_{\text{final}}^{(i)}(t) = \text{Execute}(\mathcal{L}_{\text{final}}^{(i)}(t))$. Then:
+1. *Prefix Monotonicity:* Certified history grows monotonically by prefix extension:
+   $$\mathcal{L}_{\text{final}}^{(i)}(t) \sqsubseteq \mathcal{L}_{\text{final}}^{(i)}(t+1)$$
+2. *Commit Validity:* A replica appends slot decision $(s, d)$ to $\mathcal{L}_{\text{final}}^{(i)}$ only when $d$ is verified by a valid Quorum Certificate.
+3. *Terminal State Non-Reversibility:* The state transition graph enforces $\text{FINALIZED} \not\to \text{ABORTED}$. Finalized decisions cannot be invalidated by subsequent consensus timeouts or rollbacks.
+4. *Aborted Version Quarantine:* An aborted version node cannot itself become finalized: $\text{ABORTED} \not\to \text{FINALIZED}$. If a failed transaction payload is retried, it must enter consensus as a newly proposed transaction with an entirely distinct version node.
+5. *Speculative Rollback Independence:* For any speculative branch $b$:
+   $$\operatorname{Rollback}(b) \implies \mathcal{L}_{\text{final}}^{(i)}(t+1) \equiv \mathcal{L}_{\text{final}}^{(i)}(t) \quad \text{and} \quad S_{\text{final}}^{(i)}(t+1) \equiv S_{\text{final}}^{(i)}(t)$$
 
 #### C. Foundational Lemmas
 
@@ -165,39 +168,40 @@ Let $S_{\text{final}}^{(i)}(t)$ denote the canonical finalized state of replica 
 Under Assumptions A1 and A2 ($N = 3f + 1, \|\mathcal{B}\| \le f$):
 1. *Slow-Slow Intersection:* Any two slow quorums $Q_{s1}$ and $Q_{s2}$ ($\|Q_{s1}\| = \|Q_{s2}\| = 2f + 1$) intersect in at least $f + 1$ replicas, containing at least one honest replica:
    $$\|Q_{s1} \cap Q_{s2} \cap \mathcal{H}\| \ge (2f + 1) + (2f + 1) - (3f + 1) - f = 1$$
-2. *Fast-Slow Intersection:* Because $Q_f = N = 3f + 1$, the intersection of any fast quorum $Q_f$ and any slow quorum $Q_s$ is simply $Q_s$:
+2. *Fast-Slow Intersection:* Because $Q_f = N = 3f + 1$, the intersection of any fast quorum $Q_f$ and any slow quorum $Q_s$ is identical to $Q_s$:
    $$Q_f \cap Q_s = Q_s \implies \|Q_f \cap Q_s \cap \mathcal{H}\| = \|Q_s \cap \mathcal{H}\| \ge (2f + 1) - f = f + 1$$
 
-*Proof:* Follows directly from the pigeonhole principle over the finite set of $N$ replicas containing at least $2f + 1$ honest members. $\blacksquare$
+*Proof:* Direct application of the pigeonhole principle over $N$ total replicas with at most $f$ Byzantine members. $\blacksquare$
 
-**Lemma 2 (Fast-to-Slow Slot Lock Compatibility):**
+**Lemma 2 (Fast-to-Slow Persistent Slot Locking Compatibility):**
 Under Assumptions A3, A4, and Lemma 1, if transaction $T_1$ with digest $d_1$ obtains a valid Fast-QC for slot $(v, s)$, no conflicting transaction $T_2$ with digest $d_2 \ne d_1$ can obtain a valid Slow-QC for slot $(v, s)$ in view $v$.
 
 *Proof:*
 1. By Definition 1, a Fast-QC for $d_1$ requires unanimous approval: $Q_{\text{fast}} = N = 3f + 1$.
-2. Therefore, every honest replica $R_h \in \mathcal{H}$ (where $\|\mathcal{H}\| = 2f + 1$) received proposal $d_1$, executed it speculatively, recorded `signed_slots[(v, s)] = d_1`, and emitted a fast signature.
+2. Therefore, every honest replica $R_h \in \mathcal{H}$ (where $\|\mathcal{H}\| = 2f + 1$) received proposal $d_1$, executed it speculatively on an isolated branch, recorded `signed_slots[(v, s)] = d_1` in its persistent slot registry, and emitted a fast signature share.
 3. Now suppose an adversarial leader attempts to form a Slow-QC for conflicting digest $d_2 \ne d_1$ at slot $(v, s)$ in the same view $v$.
-4. A valid Slow-QC requires signatures from a slow quorum $Q_s$ of size $2f + 1$.
-5. By Lemma 1, $Q_s$ contains at least $f + 1$ honest replicas from $\mathcal{H}$.
-6. For each honest replica $R_h \in Q_s \cap \mathcal{H}$, $R_h$ already holds `signed_slots[(v, s)] = d_1`. When the slow-path Prepare request for $d_2$ arrives, $R_h$ invokes `can_sign_proposal(v, s, d_2)`.
+4. Forming a valid Slow-QC requires collecting Prepare signatures from a slow quorum $Q_s$ of size $2f + 1$.
+5. By Lemma 1, $Q_s$ intersects the set of honest replicas $\mathcal{H}$ in at least $f + 1$ members:
+   $$\|Q_s \cap \mathcal{H}\| \ge (2f + 1) - f = f + 1$$
+6. Each honest replica $R_h \in Q_s \cap \mathcal{H}$ already holds `signed_slots[(v, s)] = d_1`. When the slow-path Prepare request for $d_2$ arrives, $R_h$ invokes `can_sign_proposal(v, s, d_2)`.
 7. By Invariant 1 (Assumption A4), $R_h$ strictly rejects signing $d_2$ because `self.signed_slots[(v, s)] != d_2`.
-8. The maximum number of signatures $d_2$ can gather in view $v$ is bounded by the $f$ Byzantine replicas plus the non-intersecting honest replicas:
+8. The maximum number of Prepare votes $d_2$ can gather in view $v$ is bounded by the $f$ Byzantine replicas plus the non-intersecting honest replicas:
    $$\text{Votes}(d_2) \le f + (\|\mathcal{H}\| - (f + 1)) = f + ((2f + 1) - (f + 1)) = 2f < 2f + 1$$
-9. Thus, $d_2$ cannot obtain the required $2f + 1$ signatures for a Slow-QC in view $v$. $\blacksquare$
+9. Because $2f < 2f + 1$, proposal $d_2$ cannot accumulate the required supermajority. Hence, a conflicting Slow-QC in view $v$ cannot form. $\blacksquare$
 
 **Lemma 3 (High-QC Monotonicity across View Changes):**
-Under Assumptions A1-A7, if a transaction with digest $d$ is certified by a Quorum Certificate $QC_v$ in view $v$, then for any higher view $v' > v$, any valid `NewView` message produced by an honest leader extends digest $d$.
+Under Assumptions A1 through A7, if a transaction with digest $d$ is certified by a Quorum Certificate $QC_v$ in view $v$, then for any higher view $v' > v$, any valid `NewView` message produced by an honest leader extends digest $d$.
 
 *Proof:*
 1. An honest leader for view $v'$ produces a `NewView` proposal only after aggregating a view-change quorum $Q_{vc}$ of size $2f + 1$ valid `VIEW_CHANGE` messages.
-2. Let $Q_{\text{cert}}$ denote the quorum of replicas that certified $d$ in view $v$. Whether $QC_v$ was formed via fast path ($Q_f = 3f + 1$) or slow path ($Q_s = 2f + 1$), Lemma 1 guarantees:
+2. Let $Q_{\text{cert}}$ denote the certification quorum for $d$ in view $v$. By Lemma 1, whether $QC_v$ was certified via fast path ($Q_f = 3f + 1$) or slow path ($Q_s = 2f + 1$):
    $$\|Q_{vc} \cap Q_{\text{cert}} \cap \mathcal{H}\| \ge 1$$
-3. Therefore, at least one honest replica $R^* \in Q_{vc}$ holds a locked Prepare-QC certifying $d$ for view $v$ (or participated in the Fast-QC).
-4. By protocol rule (`slow_path_consensus.py`), $R^*$ transmits its highest locked certificate $QC^*$ in its `VIEW_CHANGE` message to the leader of $v'$.
-5. The view-change protocol defines the proposal selection rule:
+3. Therefore, at least one honest replica $R^* \in Q_{vc}$ holds the locked certificate $QC_v$ (or holds $d$ in its persistent slot registry).
+4. By protocol specification (`slow_path_consensus.py`), $R^*$ includes its highest locked certificate $QC^*$ in its `VIEW_CHANGE` payload to the new leader.
+5. The view-change protocol defines the deterministic proposal selection rule:
    $$QC_{\text{selected}} = \operatorname{argmax}_{qc \in Q_{vc}} \{qc.\text{view}\}$$
-6. Since $R^*$ contributes $QC_v$, and by Theorem 1 no valid conflicting QC could exist in view $v$, $QC_{\text{selected}}$ must have view $\ge v$ and must extend $d$.
-7. Under Assumption A7, the leader is constrained to propose $QC_{\text{selected}}$, ensuring that the certified value $d$ is carried monotonically into view $v'$. $\blacksquare$
+6. Since $R^*$ contributes $QC_v$, and by Theorem 1 no valid conflicting certificate could exist in view $v$, $QC_{\text{selected}}$ must have view $\ge v$ and must extend $d$.
+7. Under Assumption A7, the leader is constrained to propose $QC_{\text{selected}}$, ensuring that certified value $d$ is carried forward into view $v'$. $\blacksquare$
 
 #### D. Core Theorems
 
@@ -209,41 +213,52 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
 1. **Case 1 (Same View $v_1 = v_2 = v$):**
    - *Subcase 1A (Fast-Fast):* Both obtain Fast-QCs. Both require unanimous quorums ($3f + 1$). By Invariant 1, honest replicas cannot sign two distinct digests for $(v, s)$. Contradiction.
    - *Subcase 1B (Slow-Slow):* Both obtain Slow-QCs. Both require $2f + 1$ signatures. By Lemma 1, at least one honest replica signed both. By Invariant 1, this is impossible. Contradiction.
-   - *Subcase 1C (Fast-Slow):* One obtains Fast-QC ($d_1$) and one obtains Slow-QC ($d_2$). By Lemma 2, all honest replicas signed $d_1$, preventing $d_2$ from accumulating the necessary $2f + 1$ signatures. Contradiction.
+   - *Subcase 1C (Fast-Slow Cross-Path):* $T_1$ obtains Fast-QC ($d_1$) and $T_2$ obtains Slow-QC ($d_2$). By Lemma 2, all honest replicas recorded $d_1$ in their persistent slot registry, preventing $d_2$ from accumulating the necessary $2f + 1$ Prepare signatures. Contradiction.
 2. **Case 2 (Different Views $v_1 < v_2$):**
    - Suppose $T_1$ is certified in view $v_1$, and conflicting $T_2$ is certified in view $v_2 > v_1$.
-   - By Lemma 3, any view change to a view higher than $v_1$ must carry the certified digest $d_1$ forward.
+   - By Lemma 3, any view change to a view higher than $v_1$ must select a certificate extending $d_1$.
    - Honest replicas enforce High-QC locking (Assumption A5) and reject any proposal in view $v_2$ that conflicts with $d_1$.
    - Therefore, $T_2$ cannot gather $2f + 1$ signatures in view $v_2$. Contradiction.
 3. Hence, no two conflicting transactions can ever obtain valid finalization certificates. $\blacksquare$
 
-**Theorem 2 (Liveness under Partial Synchrony):**
-*Under Assumptions A1, A2, A5, A7, A9, and A10, following Global Stabilization Time (GST), any transaction submitted by an honest client is finalized within bounded time $O(\Delta)$. Specifically, once an honest leader is established with pacemaker timeout $\tau > 4\Delta$, transaction finality is achieved within $4\Delta$.*
+**Theorem 2 (Liveness and Derived Communication Schedule under Partial Synchrony):**
+*Under Assumptions A1, A2, A5, A7, A9, and A10, following Global Stabilization Time (GST), any transaction submitted by an honest client is finalized. Specifically, once an honest leader is established with pacemaker timeout $\tau > 4\Delta$, the slow path completes within $4\Delta$ protocol-delay units.*
 
 *Proof:*
-1. **Fast-Path Fragility under Unanimity:** Under Assumption A1 ($Q_{\text{fast}} = N = 3f + 1$), if even a single replica crashes or delays messages, the fast path cannot complete. The timer $\tau_{\text{fast}}$ expires, triggering fallback transition $T_5$, which routes the transaction to the slow path accumulator.
-2. **Slow-Path Quorum Availability:** Under Assumption A10, at least $2f + 1$ non-faulty replicas remain responsive. The slow path requires only $Q_{\text{slow}} = 2f + 1$, ensuring quorum sufficiency.
-3. **Leader Election Bound:** If the current leader is Byzantine or unresponsive, honest replicas timeout within $\tau_{\text{pacemaker}}$ and broadcast `VIEW_CHANGE`. Replicas rotate leaders deterministically: $L_v = v \pmod N$. With at most $f$ Byzantine replicas (Assumption A2), an honest leader $L_{v^*}$ is installed within at most $f + 1$ view-change rounds.
-4. **Concrete Derivation of $4\Delta$ Bound after Leader Installation:**
-   After GST, all inter-replica network transmissions between honest nodes take at most $\Delta$ (Assumption A9). The honest leader $L_{v^*}$ executes the message schedule:
-   - *Phase 1 (Prepare Broadcast):* $L_{v^*}$ broadcasts proposal $(v^*, s, d)$. Replicas receive it within $T_{\text{prepare}} \le \Delta$.
-   - *Phase 2 (Prepare Vote Collection):* Replicas verify proposal and return signed Prepare shares to $L_{v^*}$ within $T_{\text{prepareQC}} \le \Delta$.
-   - *Phase 3 (Commit Broadcast):* $L_{v^*}$ aggregates $2f+1$ Prepare signatures into a Prepare-QC and broadcasts `COMMIT`. Replicas receive it within $T_{\text{commit}} \le \Delta$.
-   - *Phase 4 (Commit Vote & Finalization):* Replicas lock the QC, commit to canonical storage, and return Commit shares within $T_{\text{commitQC}} \le \Delta$.
-   - Summing the four sequential communication phases:
-     $$T_{\text{total}} = T_{\text{prepare}} + T_{\text{prepareQC}} + T_{\text{commit}} + T_{\text{commitQC}} \le \Delta + \Delta + \Delta + \Delta = 4\Delta$$
-   Hence, the transaction is finalized within bounded time $4\Delta$ after leader stabilization. $\blacksquare$
+1. **Fast-Path Availability Limitation under Unanimity:** Under Assumption A1 ($Q_{\text{fast}} = N = 3f + 1$), if even one replica is offline or unresponsive, fast-path formation stalls. The transaction timer $\tau_{\text{fast}}$ expires, triggering fallback transition $T_5$, which routes the transaction to the slow-path accumulator.
+2. **Slow-Path Quorum Sufficiency:** Under Assumption A10, at least $2f + 1$ non-faulty replicas remain responsive. The slow path requires only $Q_{\text{slow}} = 2f + 1$, ensuring quorum sufficiency.
+3. **Leader Installation Bound:** If the current leader is Byzantine or unresponsive, honest replicas timeout within $\tau_{\text{pacemaker}}$ and broadcast `VIEW_CHANGE`. Replicas rotate leaders deterministically: $L_v = v \pmod N$. With at most $f$ Byzantine replicas (Assumption A2), an honest leader $L_{v^*}$ is installed within at most $f + 1$ view-change rounds.
+4. **Concrete Derivation of $4\Delta$ Protocol-Delay Schedule:**
+   After GST, all network transmissions between honest replicas take at most $\Delta$ (Assumption A9). The honest leader $L_{v^*}$ executes the message schedule:
+   ```text
+   Leader L_v*                    Replicas (>= 2f+1)
+       |                                  |
+       |--- Edge 1: PREPARE proposal ---->|  (T_prop <= Delta)
+       |                                  |
+       |<-- Edge 2: PREPARE vote shares --|  (T_vote <= Delta)
+       |                                  |
+       |--- Edge 3: COMMIT (Prepare-QC) ->|  (T_commit <= Delta) [Replicas Finalize locally]
+       |                                  |
+       |<-- Edge 4: COMMIT vote shares ---|  (T_ack <= Delta)    [Leader Finalizes]
+   ```
+   - *Edge 1 ($T_{\text{prop}} \le \Delta$):* $L_{v^*}$ broadcasts `PREPARE(v*, s, d)`. Replicas receive it within $\Delta$.
+   - *Edge 2 ($T_{\text{vote}} \le \Delta$):* Replicas verify proposal compliance with High-QC locking, record `signed_slots[(v*, s)] = d`, and return signed Prepare shares to $L_{v^*}$ within $\Delta$.
+   - *Edge 3 ($T_{\text{commit}} \le \Delta$):* $L_{v^*}$ aggregates $2f+1$ Prepare shares into a Prepare-QC and broadcasts `COMMIT(v*, s, Prepare-QC)`. Replicas receive it, lock the QC, and finalize the delta locally into canonical storage within $\Delta$.
+   - *Edge 4 ($T_{\text{ack}} \le \Delta$):* Replicas return Commit shares. $L_{v^*}$ aggregates the Commit-QC within $\Delta$.
+   Summing the four sequential communication edges:
+   $$T_{\text{total}} = T_{\text{prop}} + T_{\text{vote}} + T_{\text{commit}} + T_{\text{ack}} \le 4\Delta$$
+   Because $\tau > 4\Delta$, the timeout does not expire prematurely, and canonical finalization completes within $4\Delta$ protocol-delay units. $\blacksquare$
 
-**Theorem 3 (Rollback Execution vs. Reclamation Complexity):**
-*In the AetherBFT MVCC version tree, assuming branch metadata and the active head set are directly addressable via hash indexing:*
+**Theorem 3 (Speculative Branch Abandonment and Reclamation Complexity):**
+*In the AetherBFT MVCC version tree, assuming branch metadata and active head sets are directly addressable via hash indexing:*
 1. *Logical branch abandonment executes in $T_{\text{logical-rollback}} = O(1)$ time with respect to the number of speculative descendants.*
 2. *Physical memory reclamation of the abandoned subtree scales in $T_{\text{reclamation}} = O(K)$ time, where $K = \|\text{Descendants}(b_{\text{conflict}})\|$.*
 
 *Proof:*
-1. **Logical Abandonment ($O(1)$):**
-   When `logical_rollback(branch_id)` is triggered, the node retrieves `node = self.branches[branch_id]` in $O(1)$ via dictionary lookup. It mutates `node.is_aborted = True` ($O(1)$) and discards `branch_id` from `self.active_speculative_heads` ($O(1)$). No child nodes are traversed during this transition. Thus, logical rollback executes in $O(1)$ time.
-2. **Physical Reclamation ($O(K)$):**
-   Garbage collection initializes a traversal queue $\mathcal{Q} = [b_{\text{conflict}}]$. The reclamation loop pops each node, unlinks parent and child references, and frees memory. Because each of the $K$ descendant nodes in the conflicting subtree is visited exactly once, total reclamation time is strictly bounded by $O(K)$. $\blacksquare$
+1. **$O(1)$ Logical Abandonment:**
+   When `logical_rollback(branch_id)` is invoked, the node retrieves `node = self.branches[branch_id]` in $O(1)$ time via hash-table lookup. It sets `node.is_aborted = True` ($O(1)$) and executes `self.active_speculative_heads.discard(branch_id)` ($O(1)$). No child nodes are traversed during this transition. Thus, logical rollback of branch metadata executes in $O(1)$ time.
+2. **$O(K)$ Physical Reclamation:**
+   Garbage collection traverses the child pointers of the subtree rooted at $b_{\text{conflict}}$ using queue $\mathcal{Q} = [b_{\text{conflict}}]$. Each of the $K$ descendant nodes in the conflicting subtree is visited, unlinked from parent references, and deallocated exactly once. Total physical reclamation time is strictly bounded by $O(K)$. $\blacksquare$
 
 **Theorem 4 (Speculative-to-Canonical State Isolation):**
 *Under Assumptions A6 and A8 and Invariant 2, speculative execution is strictly isolated from canonical state: speculative branch mutations and rollbacks cannot alter canonical state $S_{\text{final}}(t)$.*
@@ -253,7 +268,8 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
 2. Canonical read operations (`get_finalized(key)`) query only `finalized_root`.
 3. Under Invariant 2, `finalized_root` is mutated solely by `finalize_branch()`, which requires verification of a valid QC (Assumption A6).
 4. `logical_rollback(branch_id)` operates strictly on unfinalized version nodes where `node.is_finalized == False`.
-5. Therefore, no sequence of speculative writes or rollbacks can mutate `finalized_root`, ensuring that canonical storage remains strictly isolated and monotonically non-decreasing. $\blacksquare$
+5. Therefore, no sequence of speculative writes or rollbacks can mutate `finalized_root`, ensuring that canonical storage remains strictly isolated and prefix-monotonic.
+*(Note: Agreement among honest replicas on canonical state $S_{\text{final}}^{(i)} = S_{\text{final}}^{(j)}$ follows independently from Theorem 1 safety and deterministic execution A8).* $\blacksquare$
 
 ### VI. Implementation Invariant Tests & Complexity Validation
 
