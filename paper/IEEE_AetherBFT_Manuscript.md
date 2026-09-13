@@ -153,11 +153,14 @@ $$R_i \in \mathcal{H} \implies \neg \left[ \operatorname{Sign}_i(v, s, d_1) \lan
 This rule applies equally whether the prior signature was emitted for a speculative fast proposal or a slow Prepare proposal.
 
 **Invariant 2 (Prefix-Monotonic Finalized Log and Canonical State Isolation):**
-Let $\mathcal{L}_{\text{final}}^{(i)}(t) = \langle (s_1, d_1), (s_2, d_2), \dots \rangle$ denote the sequence of certified slot decisions committed by honest replica $R_i$ up to time $t$, with canonical state derived via deterministic sequential fold: $S_{\text{final}}^{(i)}(t) = \text{Execute}(\mathcal{L}_{\text{final}}^{(i)}(t))$. Then:
-1. *Prefix Monotonicity:* Certified history grows monotonically by prefix extension:
+Let $\mathcal{L}_{\text{final}}^{(i)}(t) = \langle (1, d_1), (2, d_2), \dots, (m, d_m) \rangle$ denote the contiguous sequence of certified slot decisions committed by honest replica $R_i$ up to time $t$, with canonical state derived via deterministic sequential execution: $S_{\text{final}}^{(i)}(t) = \text{Execute}(\mathcal{L}_{\text{final}}^{(i)}(t))$. We formally define prefix relation $\sqsubseteq$:
+$$\mathcal{L}_1 \sqsubseteq \mathcal{L}_2 \iff \exists \, \mathcal{K} \text{ such that } \mathcal{L}_2 = \mathcal{L}_1 \, \Vert \, \mathcal{K}$$
+where $\Vert$ denotes sequence concatenation. The protocol guarantees:
+1. *Strict Prefix Monotonicity:* Certified history is strictly append-only:
    $$\mathcal{L}_{\text{final}}^{(i)}(t) \sqsubseteq \mathcal{L}_{\text{final}}^{(i)}(t+1)$$
+   Previously committed slot decisions are never truncated, modified, or reordered. If a certificate is obtained out of order for slot $s+k$, it is buffered until slots $s, \dots, s+k-1$ finalize contiguously.
 2. *Commit Validity:* A replica appends slot decision $(s, d)$ to $\mathcal{L}_{\text{final}}^{(i)}$ only when $d$ is verified by a valid Quorum Certificate.
-3. *Terminal State Non-Reversibility:* The state transition graph enforces $\text{FINALIZED} \not\to \text{ABORTED}$. Finalized decisions cannot be invalidated by subsequent consensus timeouts or rollbacks.
+3. *Terminal State Non-Reversibility:* The state machine transition graph enforces $\text{FINALIZED} \not\to \text{ABORTED}$. Finalized decisions cannot be invalidated by subsequent consensus timeouts or rollbacks.
 4. *Aborted Version Quarantine:* An aborted version node cannot itself become finalized: $\text{ABORTED} \not\to \text{FINALIZED}$. If a failed transaction payload is retried, it must enter consensus as a newly proposed transaction with an entirely distinct version node.
 5. *Speculative Rollback Independence:* For any speculative branch $b$:
    $$\operatorname{Rollback}(b) \implies \mathcal{L}_{\text{final}}^{(i)}(t+1) \equiv \mathcal{L}_{\text{final}}^{(i)}(t) \quad \text{and} \quad S_{\text{final}}^{(i)}(t+1) \equiv S_{\text{final}}^{(i)}(t)$$
@@ -189,19 +192,22 @@ Under Assumptions A3, A4, and Lemma 1, if transaction $T_1$ with digest $d_1$ ob
    $$\text{Votes}(d_2) \le f + (\|\mathcal{H}\| - (f + 1)) = f + ((2f + 1) - (f + 1)) = 2f < 2f + 1$$
 9. Because $2f < 2f + 1$, proposal $d_2$ cannot accumulate the required supermajority. Hence, a conflicting Slow-QC in view $v$ cannot form. $\blacksquare$
 
-**Lemma 3 (High-QC Monotonicity across View Changes):**
-Under Assumptions A1 through A7, if a transaction with digest $d$ is certified by a Quorum Certificate $QC_v$ in view $v$, then for any higher view $v' > v$, any valid `NewView` message produced by an honest leader extends digest $d$.
+**Lemma 3 (High-QC Monotonicity and Proposal Selection across View Changes):**
+Under Assumptions A1 through A7, if a transaction with digest $d$ is certified by a valid Quorum Certificate $QC_v$ for slot $s$ in view $v$, then for any higher view $v' > v$, any valid `NewView` proposal produced by an honest leader for slot $s$ must extend digest $d$.
 
 *Proof:*
-1. An honest leader for view $v'$ produces a `NewView` proposal only after aggregating a view-change quorum $Q_{vc}$ of size $2f + 1$ valid `VIEW_CHANGE` messages.
-2. Let $Q_{\text{cert}}$ denote the certification quorum for $d$ in view $v$. By Lemma 1, whether $QC_v$ was certified via fast path ($Q_f = 3f + 1$) or slow path ($Q_s = 2f + 1$):
+1. An honest leader for view $v'$ constructs a `NewView` message only after aggregating a view-change quorum $Q_{vc}$ of size $2f + 1$ valid, cryptographically authenticated `VIEW_CHANGE` messages.
+2. Let $Q_{\text{cert}}$ denote the certification quorum for $d$ in view $v$. By Lemma 1, whether $QC_v$ was formed via unanimous fast path ($Q_f = 3f + 1$) or supermajority slow path ($Q_s = 2f + 1$), the view-change quorum intersects the certification quorum in at least one honest replica:
    $$\|Q_{vc} \cap Q_{\text{cert}} \cap \mathcal{H}\| \ge 1$$
-3. Therefore, at least one honest replica $R^* \in Q_{vc}$ holds the locked certificate $QC_v$ (or holds $d$ in its persistent slot registry).
-4. By protocol specification (`slow_path_consensus.py`), $R^*$ includes its highest locked certificate $QC^*$ in its `VIEW_CHANGE` payload to the new leader.
-5. The view-change protocol defines the deterministic proposal selection rule:
-   $$QC_{\text{selected}} = \operatorname{argmax}_{qc \in Q_{vc}} \{qc.\text{view}\}$$
-6. Since $R^*$ contributes $QC_v$, and by Theorem 1 no valid conflicting certificate could exist in view $v$, $QC_{\text{selected}}$ must have view $\ge v$ and must extend $d$.
-7. Under Assumption A7, the leader is constrained to propose $QC_{\text{selected}}$, ensuring that certified value $d$ is carried forward into view $v'$. $\blacksquare$
+3. Therefore, at least one honest replica $R^* \in Q_{vc}$ holds the locked certificate $QC_v$ (or holds $d$ in its persistent slot registry `signed_slots[(v, s)]`).
+4. In accordance with protocol rules (`slow_path_consensus.py`), $R^*$ attaches its highest verified certificate $QC^*$ in its `VIEW_CHANGE` payload.
+5. The deterministic leader selection rule evaluates the set of attached certificates $V = \{qc \in Q_{vc} \mid \operatorname{ValidQC}(qc) = \text{True}\}$:
+   $$QC_{\text{selected}} = \operatorname{argmax}_{qc \in V} \, (\operatorname{view}(qc), \operatorname{sequence}(qc))$$
+6. Tie-Breaking and Uniqueness: If two certificates in $V$ report identical view $v$ for slot $s$, by Theorem 1 (Case 1) they cannot certify conflicting digests ($d \ne d'$). Thus, $QC_{\text{selected}}$ uniquely specifies digest $d$.
+7. Proposal Constraint: Under Assumption A7, the honest leader is constrained to set:
+   $$\operatorname{Proposal}(v', s) = QC_{\text{selected}}.\text{digest} = d$$
+8. Replica Verification: When honest replicas receive proposal $(v', s, d)$, they verify it against their local `locked_qc`. Under High-QC locking (Assumption A5), an honest replica signs Prepare if $\operatorname{view}(\operatorname{Proposal}) > \operatorname{view}(\text{locked\_qc})$ or $\operatorname{digest}(\operatorname{Proposal}) == \operatorname{digest}(\text{locked\_qc})$. Because $\operatorname{view}(QC_{\text{selected}}) \ge \operatorname{view}(\text{locked\_qc})$, the proposal is validly accepted.
+9. Hence, the certified digest $d$ is monotonically preserved across all view changes. $\blacksquare$
 
 #### D. Core Theorems
 
@@ -222,32 +228,35 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
 3. Hence, no two conflicting transactions can ever obtain valid finalization certificates. $\blacksquare$
 
 **Theorem 2 (Liveness and Derived Communication Schedule under Partial Synchrony):**
-*Under Assumptions A1, A2, A5, A7, A9, and A10, following Global Stabilization Time (GST), any transaction submitted by an honest client is finalized. Specifically, once an honest leader is established with pacemaker timeout $\tau > 4\Delta$, the slow path completes within $4\Delta$ protocol-delay units.*
+*Under Assumptions A1, A2, A5, A7, A9, and A10, following Global Stabilization Time (GST), any transaction submitted by an honest client is finalized. Specifically, once an honest leader is installed with pacemaker timeout $\tau > 5\Delta$, leader-observed certificate completion occurs within $4\Delta$, and replica-visible canonical finalization completes within $5\Delta$ protocol-delay units.*
 
 *Proof:*
-1. **Fast-Path Availability Limitation under Unanimity:** Under Assumption A1 ($Q_{\text{fast}} = N = 3f + 1$), if even one replica is offline or unresponsive, fast-path formation stalls. The transaction timer $\tau_{\text{fast}}$ expires, triggering fallback transition $T_5$, which routes the transaction to the slow-path accumulator.
-2. **Slow-Path Quorum Sufficiency:** Under Assumption A10, at least $2f + 1$ non-faulty replicas remain responsive. The slow path requires only $Q_{\text{slow}} = 2f + 1$, ensuring quorum sufficiency.
+1. **Fast-Path Availability Limitation under Unanimity:** Under Assumption A1 ($Q_{\text{fast}} = N = 3f + 1$), if even one replica is offline or unresponsive, fast-path formation stalls. The transaction timer $\tau_{\text{fast}}$ expires, triggering fallback transition $T_5$, which routes consensus to the slow path.
+2. **Slow-Path Quorum Sufficiency:** Under Assumption A10, at least $2f + 1$ non-faulty replicas remain responsive. The slow path requires only $Q_{\text{slow}} = 2f + 1$, guaranteeing quorum availability.
 3. **Leader Installation Bound:** If the current leader is Byzantine or unresponsive, honest replicas timeout within $\tau_{\text{pacemaker}}$ and broadcast `VIEW_CHANGE`. Replicas rotate leaders deterministically: $L_v = v \pmod N$. With at most $f$ Byzantine replicas (Assumption A2), an honest leader $L_{v^*}$ is installed within at most $f + 1$ view-change rounds.
-4. **Concrete Derivation of $4\Delta$ Protocol-Delay Schedule:**
-   After GST, all network transmissions between honest replicas take at most $\Delta$ (Assumption A9). The honest leader $L_{v^*}$ executes the message schedule:
+4. **Concrete Derivation of the 5-Edge Communication Schedule:**
+   After GST, all network message transmissions between honest replicas take at most $\Delta$ (Assumption A9). The honest leader $L_{v^*}$ and replicas execute the following five-edge communication sequence:
    ```text
-   Leader L_v*                    Replicas (>= 2f+1)
-       |                                  |
-       |--- Edge 1: PREPARE proposal ---->|  (T_prop <= Delta)
-       |                                  |
-       |<-- Edge 2: PREPARE vote shares --|  (T_vote <= Delta)
-       |                                  |
-       |--- Edge 3: COMMIT (Prepare-QC) ->|  (T_commit <= Delta) [Replicas Finalize locally]
-       |                                  |
-       |<-- Edge 4: COMMIT vote shares ---|  (T_ack <= Delta)    [Leader Finalizes]
+   Leader L_v*                           Replicas (>= 2f+1)
+       |                                         |
+       |--- Edge 1: PREPARE proposal ----------->|  (T_prop <= Delta)
+       |                                         |
+       |<-- Edge 2: PREPARE vote shares ---------|  (T_prep_vote <= Delta)
+       |                                         |
+       |--- Edge 3: COMMIT (Prepare-QC) -------->|  (T_commit_prop <= Delta) [Replicas lock Prepare-QC]
+       |                                         |
+       |<-- Edge 4: COMMIT vote shares ----------|  (T_commit_vote <= Delta) [Leader forms Commit-QC at 4*Delta]
+       |                                         |
+       |--- Edge 5: COMMIT-QC broadcast -------->|  (T_finalize <= Delta)    [Replicas commit to canonical root at 5*Delta]
    ```
    - *Edge 1 ($T_{\text{prop}} \le \Delta$):* $L_{v^*}$ broadcasts `PREPARE(v*, s, d)`. Replicas receive it within $\Delta$.
-   - *Edge 2 ($T_{\text{vote}} \le \Delta$):* Replicas verify proposal compliance with High-QC locking, record `signed_slots[(v*, s)] = d`, and return signed Prepare shares to $L_{v^*}$ within $\Delta$.
-   - *Edge 3 ($T_{\text{commit}} \le \Delta$):* $L_{v^*}$ aggregates $2f+1$ Prepare shares into a Prepare-QC and broadcasts `COMMIT(v*, s, Prepare-QC)`. Replicas receive it, lock the QC, and finalize the delta locally into canonical storage within $\Delta$.
-   - *Edge 4 ($T_{\text{ack}} \le \Delta$):* Replicas return Commit shares. $L_{v^*}$ aggregates the Commit-QC within $\Delta$.
-   Summing the four sequential communication edges:
-   $$T_{\text{total}} = T_{\text{prop}} + T_{\text{vote}} + T_{\text{commit}} + T_{\text{ack}} \le 4\Delta$$
-   Because $\tau > 4\Delta$, the timeout does not expire prematurely, and canonical finalization completes within $4\Delta$ protocol-delay units. $\blacksquare$
+   - *Edge 2 ($T_{\text{prep\_vote}} \le \Delta$):* Replicas verify High-QC locking, record `signed_slots[(v*, s)] = d`, and return signed Prepare shares to $L_{v^*}$ within $\Delta$.
+   - *Edge 3 ($T_{\text{commit\_prop}} \le \Delta$):* $L_{v^*}$ aggregates $2f+1$ Prepare shares into a Prepare-QC and broadcasts `COMMIT(v*, s, Prepare-QC)`. Replicas receive it within $\Delta$ and update local lock: `self.locked_qc = prepare_qc`.
+   - *Edge 4 ($T_{\text{commit\_vote}} \le \Delta$):* Replicas return signed Commit shares to $L_{v^*}$ within $\Delta$. At this milestone ($T = 4\Delta$), $L_{v^*}$ aggregates $2f+1$ Commit shares into a valid Commit-QC, completing **leader-observed certificate finality** in $4\Delta$.
+   - *Edge 5 ($T_{\text{finalize}} \le \Delta$):* $L_{v^*}$ broadcasts `COMMIT-QC(v*, s, Commit-QC)`. Replicas receive the certificate within $\Delta$, verify it, and invoke `finalize_branch()`, executing canonical state fold: $S_{\text{final}}^{(i)}(t+1) = S_{\text{final}}^{(i)}(t) \oplus d$.
+   Summing all five communication edges:
+   $$T_{\text{replica-final}} = T_{\text{prop}} + T_{\text{prep\_vote}} + T_{\text{commit\_prop}} + T_{\text{commit\_vote}} + T_{\text{finalize}} \le 5\Delta$$
+   Because $\tau > 5\Delta$, the pacemaker timeout does not expire prematurely during execution, and replica-visible canonical finalization is achieved within $5\Delta$ protocol-delay units. $\blacksquare$
 
 **Theorem 3 (Speculative Branch Abandonment and Reclamation Complexity):**
 *In the AetherBFT MVCC version tree, assuming branch metadata and active head sets are directly addressable via hash indexing:*
