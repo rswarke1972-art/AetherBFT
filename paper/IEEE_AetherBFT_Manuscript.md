@@ -1,4 +1,4 @@
-# AetherBFT: Dependency-Aware Speculative Execution for Low-Latency Byzantine Fault-Tolerant Consensus
+# AetherBFT: Dependency-Aware Speculative Byzantine Consensus with Isolated MVCC Branches
 
 **Author:** Sahil Rajesh Warke  
 **Affiliation:** Independent Research in Distributed Systems and Algorithmic Consensus  
@@ -9,9 +9,7 @@
 ---
 
 ### Abstract
-Geographically distributed State Machine Replication (SMR) protocols face significant commit latency overhead because classical Byzantine Fault Tolerance (PBFT) and modern pipelined architectures (HotStuff) require 2 to 3 cross-region network round-trip times (RTTs) per consensus decision. Over cross-continental links with typical RTTs of 100 to 200 ms, these sequential phases compound into 200 to 600 ms client confirmation delays. Optimistic protocols (such as Zyzzyva) offer a 1-RTT fast path under fault-free conditions, but a single Byzantine leader equivocation can trigger cascading rollbacks that invalidate the global speculative transaction history. 
-
-This paper presents **AetherBFT**, a dual-path Byzantine Fault Tolerant replication engine that combines an unanimous speculative fast path ($Q_{\text{fast}} = 3f + 1$) with an ephemeral Multi-Version Concurrency Control (MVCC) version-tree state machine and a fallback two-phase quorum-certified slow path ($Q_{\text{slow}} = 2f + 1$). AetherBFT explicitly decouples speculative client acknowledgment latency ($L_{\text{spec}}$) from irreversible canonical finality ($L_{\text{final}}$). When an adversarial leader injects conflicting proposals, AetherBFT localizes logical rollback to the conflicting dependency subgraph in $T_{\text{logical-rollback}} = O(1)$ pointer invalidation time, leaving independent transactions and finalized canonical state unaffected. In controlled benchmarks across modeled network delays (1 to 200 ms RTT) and Byzantine fault injection, AetherBFT demonstrates a 50.0% reduction in speculative acknowledgment latency compared to PBFT and a 66.8% reduction compared to HotStuff, while maintaining zero canonical state divergence ($D_{\text{final}} = 0$) and reducing rollback amplification ($A_r$) from 12.5x down to 1.15x relative to un-isolated speculative execution.
+Byzantine fault-tolerant state machine replication provides strong consistency under adversarial failures but incurs communication latency that can limit geographically distributed applications. AetherBFT introduces a dual-path consensus architecture combining a unanimous speculative fast path ($Q_{\text{fast}} = 3f + 1$), certified dependency contexts, and isolated ephemeral Multi-Version Concurrency Control (MVCC) version branches with a two-phase Byzantine fallback path ($Q_{\text{slow}} = 2f + 1$). Speculative execution is strictly separated from canonical finalized state, enabling constant-time logical branch abandonment ($T_{\text{logical-rollback}} = O(1)$) while limiting subsequent physical reclamation to the affected dependency subtree ($T_{\text{reclamation}} = O(K)$). We formally analyze canonical-state safety under $N \ge 3f + 1$, authenticated signatures, replica slot monotonicity, High-QC locking, and view-change preservation. In a controlled network-delay model, speculative acknowledgment approaches one modeled RTT, while the measured ablation study evaluates the contribution of dependency tracking and MVCC isolation to rollback localization. Across 700 Byzantine fault-injection trials, no conflicting canonical finalizations were observed ($D_{\text{final}} = 0$). The results are implementation- and workload-dependent and do not constitute evidence from a physical geo-distributed deployment.
 
 **Keywords:** Byzantine Fault Tolerance, Distributed Consensus, Speculative Execution, Multi-Version Concurrency Control, Certified Dependency Contexts, Quorum Certificates.
 
@@ -125,83 +123,104 @@ If a leader fails or equivocates:
 
 ### V. Theoretical Analysis and Formal Proofs
 
-#### A. Lemma 1 (Quorum Intersection)
-*In any system of $N = 3f + 1$ replicas where $Q_{\text{fast}} = 3f + 1$ and $Q_{\text{slow}} = 2f + 1$, the intersection of any fast quorum with any slow quorum contains at least $f + 1$ replicas, and the intersection of any two slow quorums contains at least $f + 1$ replicas.*
+#### A. Foundational System Invariant: Canonical State Monotonicity
+Before analyzing safety and liveness, we define the foundational invariant governing the replicated state machine:
+
+**Invariant 1 (Canonical Monotonicity and Non-Reversibility):**
+For every honest replica $R_i$, canonical finalized state mutations occur if and only if a certified decision $d$ is verified:
+$$S_{\text{final}}^{(i)}(t+1) = S_{\text{final}}^{(i)}(t) \oplus d \quad \iff \quad \text{ValidQC}(d) = \text{True}$$
+Furthermore, terminal state transitions are strictly one-directional:
+$$\text{FINALIZED} \not\to \text{ABORTED} \quad \text{and} \quad \text{ABORTED} \not\to \text{FINALIZED}$$
+Speculative branch abandonment has zero impact on canonical state:
+$$\operatorname{Rollback}(b) \implies S_{\text{final}}^{(i)}(t+1) \equiv S_{\text{final}}^{(i)}(t)$$
+
+#### B. Lemma 1 (Quorum Intersection and Overlap Cardinality)
+*In any system of $N = 3f + 1$ replicas where unanimous fast quorums have size $Q_{\text{fast}} = 3f + 1 = N$ and slow quorums have size $Q_{\text{slow}} = 2f + 1$:*
+1. *Any two slow quorums $Q_{s1}$ and $Q_{s2}$ intersect in at least $f + 1$ replicas, containing at least one honest replica:*
+   $$\|Q_{s1} \cap Q_{s2} \cap \mathcal{H}\| \ge (2f + 1) + (2f + 1) - (3f + 1) - f = 1$$
+2. *Any fast quorum $Q_f$ and any slow quorum $Q_s$ intersect in at least $2f + 1$ replicas, containing at least $f + 1$ honest replicas:*
+   $$\|Q_f \cap Q_s \cap \mathcal{H}\| \ge (3f + 1) + (2f + 1) - (3f + 1) - f = f + 1$$
+
+*Proof:* Direct consequence of the pigeonhole principle over the finite set of $N$ replicas with at most $f$ Byzantine members. $\blacksquare$
+
+#### C. Lemma 2 (Replica Slot Monotonicity and Cross-Path Signing Rule)
+*Let $R_i$ be an honest replica. For any sequence slot $(v, s)$, $R_i$ emits a signature on proposal digest $d$ at most once. Specifically, if $R_i$ participates in a Fast-QC for digest $d$ at slot $(v, s)$, $R_i$ cannot subsequently emit a Prepare signature for any conflicting digest $d' \ne d$ at slot $(v, s)$.*
 
 *Proof:*
-1. Let $Q_f$ be any fast quorum with $\|Q_f\| = 3f + 1 = N$.
-2. Let $Q_s$ be any slow quorum with $\|Q_s\| = 2f + 1$.
-3. By the pigeonhole principle:
-   $$\|Q_f \cap Q_s\| = \|Q_f\| + \|Q_s\| - \|Q_f \cup Q_s\| = (3f + 1) + (2f + 1) - (3f + 1) = 2f + 1$$
-   Since at most $f$ replicas are Byzantine, the intersection contains at least:
-   $$(2f + 1) - f = f + 1 \text{ honest replicas.}$$
-4. Similarly, for two slow quorums $Q_{s1}$ and $Q_{s2}$:
-   $$\|Q_{s1} \cap Q_{s2}\| = (2f + 1) + (2f + 1) - (3f + 1) = f + 1$$
-   Subtracting up to $f$ faulty nodes leaves at least $(f + 1) - f = 1$ honest replica in common. $\blacksquare$
+By protocol implementation (`slow_path_consensus.py`, lines 45-58), honest replicas guard signing via the persistent slot registry `signed_slots`:
+```python
+slot = (view, sequence)
+if slot in self.signed_slots:
+    if self.signed_slots[slot] != digest:
+        return False  # Monotonicity invariant enforced
+```
+1. When $R_i$ signs a fast-path proposal $d$ at $(v, s)$, the entry `signed_slots[(v, s)] = d` is committed to local memory.
+2. If an equivocating leader or network retry presents proposal $d'$ for the identical slot $(v, s)$, the check `self.signed_slots[slot] != digest` evaluates to true because $d' \ne d$.
+3. The method immediately returns `False`, and `sign_prepare()` aborts without emitting a signature share.
+4. Hence, $R_i$ signs at most one unique digest per sequence slot across both fast and slow paths. $\blacksquare$
 
-#### B. Lemma 2 (Cross-Path Signing & Locking Invariant)
-*An honest replica $R_i$ that has participated in a Fast-QC for sequence slot $(v, s)$ with digest $d$ cannot sign a conflicting Prepare vote for slot $(v, s)$ with digest $d' \ne d$.*
-
-*Proof:*
-1. By protocol definition (`slow_path_consensus.py`, lines 45-58), honest replicas enforce slot monotonicity via `signed_slots`:
-   ```python
-   slot = (view, sequence)
-   if slot in self.signed_slots:
-       if self.signed_slots[slot] != digest:
-           return False  # Double-signing prevented
-   ```
-2. When $R_i$ signs a fast-path proposal with digest $d$ at slot $(v, s)$, the pair $((v, s), d)$ is immutably recorded in $R_i$'s local registry.
-3. If an equivocating leader subsequently presents proposal $d'$ for the same $(v, s)$, condition `self.signed_slots[slot] != digest` evaluates to true, and $R_i$ refuses to sign.
-4. Hence, an honest replica signs at most one digest per sequence slot. $\blacksquare$
-
-#### C. Theorem 1 (Canonical-State Safety)
-*Under $N \ge 3f + 1$, unforgeable signatures, slot monotonicity, High-QC locking, and view-change preservation, two conflicting transactions $T$ and $T'$ cannot both obtain valid finalization certificates in any views $v$ and $v'$.*
+#### D. Theorem 1 (Canonical-State Safety)
+*Under authenticated digital signatures, $N \ge 3f + 1$, the specified unanimous fast ($Q_{\text{fast}} = 3f + 1$) and supermajority slow ($Q_{\text{slow}} = 2f + 1$) certificate rules, honest-replica slot monotonicity, High-QC locking, and view-change preservation, two conflicting transactions $T$ and $T'$ cannot both obtain valid finalization certificates for the same consensus slot.*
 
 *Proof:*
-We prove by contradiction. Suppose conflicting transactions $T$ and $T'$ both obtain valid finalization certificates for sequence slot $s$.
-1. **Case 1 (Same View $v = v'$):**
-   - If both finalize via slow path: $T$ requires slow quorum $Q_{s1}$ ($2f+1$ signatures) and $T'$ requires $Q_{s2}$ ($2f+1$ signatures). By Lemma 1, $\|Q_{s1} \cap Q_{s2}\| \ge f + 1$. Because at most $f$ nodes are Byzantine, at least one honest replica $R_h \in Q_{s1} \cap Q_{s2}$ must have signed both $T$ and $T'$ in slot $(v, s)$. But by Lemma 2, an honest replica strictly refuses to double-sign slot $(v, s)$. Contradiction.
-   - If one finalizes via fast path ($T$) and one via slow path ($T'$): $T$ requires unanimous $Q_f = 3f + 1$, meaning all $2f + 1$ honest replicas signed $T$. For $T'$ to finalize on slow path, it requires $2f + 1$ signatures, of which at least $f + 1$ must be honest. Thus, at least one honest replica signed both $T$ and $T'$. By Lemma 2, this is impossible. Contradiction.
-2. **Case 2 (Different Views $v < v'$):**
-   - Suppose $T$ was certified in view $v$. For a conflicting $T'$ to obtain a certificate in view $v' > v$, the leader of $v'$ must have constructed a `NewView` message containing a quorum of $2f + 1$ view-change messages.
-   - By Lemma 1, the view-change quorum overlaps with the certification quorum of $T$ by at least one honest replica $R_h$.
-   - By the High-QC preservation rule (`slow_path_consensus.py`, line 125), $R_h$ reports its highest locked QC certifying $T$. The leader of $v'$ is constrained by the protocol to extend the highest QC in the quorum, forcing the proposal in view $v'$ to be $T$, not $T'$. Contradiction.
-3. Therefore, no two conflicting transactions can ever obtain valid finalization certificates. $\blacksquare$
+We proceed by contradiction. Suppose two conflicting transactions $T$ and $T'$ (with digests $d \ne d'$) both obtain valid finalization certificates for sequence slot $s$.
+1. **Case 1: Same View ($v = v'$):**
+   - *Subcase 1A (Fast-Fast Conflict):* Both $T$ and $T'$ finalize via the unanimous fast path. By Definition 1, a Fast-QC requires $Q_{\text{fast}} = N = 3f + 1$ signatures. Since there are at most $f$ faulty replicas, all $2f + 1$ honest replicas must have signed $T$, and all $2f + 1$ honest replicas must have signed $T'$. By Lemma 2, an honest replica strictly refuses to sign two distinct digests for the same slot $(v, s)$. Since $2f + 1 \ge 1$, this requires an honest replica to violate slot monotonicity, which is impossible.
+   - *Subcase 1B (Slow-Slow Conflict):* Both $T$ and $T'$ finalize via the slow path. $T$ requires a Prepare-QC from slow quorum $Q_{s1}$ ($\|Q_{s1}\| = 2f + 1$), and $T'$ requires $Q_{s2}$ ($\|Q_{s2}\| = 2f + 1$). By Lemma 1, $\|Q_{s1} \cap Q_{s2} \cap \mathcal{H}\| \ge 1$. At least one honest replica $R_h$ must have signed Prepare votes for both $d$ and $d'$ in view $v$. By Lemma 2, this is impossible.
+   - *Subcase 1C (Fast-Slow Cross-Path Conflict):* $T$ finalized via the unanimous fast path in view $v$, while $T'$ finalized via the slow path in view $v$. The Fast-QC for $T$ contains signatures from all $2f + 1$ honest replicas. The Slow-QC for $T'$ contains signatures from slow quorum $Q_s$ ($\|Q_s\| = 2f + 1$). By Lemma 1, $\|Q_f \cap Q_s \cap \mathcal{H}\| \ge f + 1 \ge 1$. Thus, at least $f + 1$ honest replicas must have signed $T'$ after signing $T$. By Lemma 2, honest replicas reject signing $d'$ because slot $(v, s)$ is already locked on $d$. Hence, $T'$ cannot form a Slow-QC. Contradiction.
+2. **Case 2: Different Views ($v < v'$):**
+   - Assume without loss of generality that $T$ was certified in view $v$, and $T'$ was certified in view $v' > v$.
+   - For $T'$ to obtain a certificate in view $v'$, the leader of $v'$ must have constructed a `NewView` message supported by a quorum of $2f + 1$ view-change messages.
+   - Let $Q_{vc}$ denote the set of replicas contributing to the view change ($\|Q_{vc}\| = 2f + 1$). By Lemma 1, $\|Q_{vc} \cap Q_{\text{cert}} \cap \mathcal{H}\| \ge 1$, where $Q_{\text{cert}}$ is the certification quorum for $T$ (whether fast or slow).
+   - Therefore, at least one honest replica $R_h \in Q_{vc}$ holds the locked Prepare-QC certifying $T$ with view $v$.
+   - In accordance with the pacemaker protocol (`slow_path_consensus.py`, line 125), $R_h$ includes its highest locked QC in its `VIEW_CHANGE` payload.
+   - The leader of view $v'$ aggregates $2f+1$ view change votes and must select:
+     $$QC_{\text{high}} = \operatorname{argmax}_{qc} \{qc.\text{view} \mid qc \in Q_{vc}\}$$
+     Since $R_h$ contributed a valid QC from view $v$, no conflicting QC from view $v$ can exist (as proven in Case 1). Thus, the proposal in view $v'$ must extend $T$, and cannot propose conflicting $T'$. Contradiction.
+3. We conclude that two conflicting transactions cannot both obtain valid finalization certificates in any execution. $\blacksquare$
 
-#### D. Theorem 2 (Liveness under Partial Synchrony)
-*After Global Stabilization Time (GST), any transaction submitted by an honest client is finalized within bounded time $O(\Delta)$.*
+#### E. Theorem 2 (Liveness under Partial Synchrony)
+*Assume partial synchrony after Global Stabilization Time (GST), where inter-replica transmission delays between non-faulty replicas are bounded by $\Delta$. If at least $2f + 1$ non-faulty replicas remain responsive, and the linear pacemaker rotates to an honest leader $L_v$ with timeout $\tau > 4\Delta$, then a submitted transaction is eventually finalized.*
 
 *Proof:*
-1. After GST, network message delays are bounded by $\Delta$.
-2. If the current leader is honest, non-conflicting transactions complete the fast path in $2\Delta$, or fallback to slow path completing in $4\Delta$.
-3. If the current leader is Byzantine and fails to make progress, honest replicas timeout within bounded period $\tau_{\text{pacemaker}} = 2\Delta$ and broadcast `VIEW_CHANGE`.
-4. Replicas elect consecutive round-robin leaders $L_v = v \pmod N$. Since at most $f$ nodes are faulty out of $3f + 1$, an honest leader is reached within at most $f + 1$ view changes.
-5. Once an honest leader is installed, its `NewView` proposal arrives at all honest replicas within $\Delta$, and a Slow-QC is established within $2\Delta$. Total time to finality is bounded by $(f + 1) \cdot O(\Delta) = O(\Delta)$. $\blacksquare$
+1. **Unanimous Fast-Path Availability Limitation:** We explicitly acknowledge that because $Q_{\text{fast}} = N = 3f + 1$, a single crashed or unresponsive replica halts fast-path certificate formation. Under such conditions, the transaction timer $\tau_{\text{fast}}$ expires, triggering $T_5$ (`trigger_fallback_to_slow()`), which routes consensus to the slow path.
+2. **Slow-Path Quorum Sufficiency:** The slow path requires only $Q_{\text{slow}} = 2f + 1$ signatures. By assumption, at least $2f + 1$ honest replicas are responsive.
+3. **Leader Election and Pacemaker Bound:** If the current leader is Byzantine or unresponsive, honest replicas timeout within $\tau_{\text{pacemaker}}$ and broadcast `VIEW_CHANGE`. Replicas rotate leaders round-robin: $L_v = v \pmod N$. Since at most $f$ replicas are faulty out of $3f + 1$, an honest leader is guaranteed to be installed within at most $f + 1$ view changes.
+4. **Finalization after GST:** Once an honest leader $L_{v^*}$ is installed with $\tau > 4\Delta$:
+   - $L_{v^*}$ aggregates $2f+1$ view-change messages and broadcasts `NewView` within $\Delta$.
+   - Honest replicas verify the proposal and reply with Prepare signatures within $\Delta$.
+   - $L_{v^*}$ forms a Prepare-QC and broadcasts Commit within $\Delta$.
+   - Honest replicas verify the Prepare-QC and commit the transaction to canonical state within $\Delta$.
+   - The total time to finality after installing the honest leader is bounded by $4\Delta$. $\blacksquare$
 
-#### E. Theorem 3 (Rollback Execution vs. Reclamation Complexity)
-*In the AetherBFT MVCC version tree, logical branch abandonment executes in $T_{\text{logical-rollback}} = O(1)$ time, while physical memory reclamation scales in $T_{\text{reclamation}} = O(K)$ where $K = \|\text{Descendants}(b_{\text{conflict}})\|$.*
+#### F. Theorem 3 (Rollback Execution vs. Reclamation Complexity)
+*In the AetherBFT MVCC version tree, assuming branch metadata and head pointers are directly indexed:*
+1. *Logical branch abandonment executes in $T_{\text{logical-rollback}} = O(1)$ time with respect to the number of speculative descendants.*
+2. *Physical memory reclamation of the abandoned subtree scales in $T_{\text{reclamation}} = O(K)$ time, where $K = \|\text{Descendants}(b_{\text{conflict}})\|$.*
 
 *Proof:*
 1. **Logical Abandonment ($O(1)$):**
-   When `logical_rollback(branch_id)` is invoked, the node sets `curr.is_aborted = True` on the target version node and discards `branch_id` from `active_speculative_heads` in a hash-set removal operation. Both operations execute in $O(1)$ amortized time.
-2. **Physical Reclamation ($O(K)$):**
-   To physically reclaim allocated memory, the version tree traverses the descendant subtree queue:
+   Upon detection of an invalid proposal or equivocation, `logical_rollback(branch_id)` executes:
    ```python
-   queue = [node]
-   while queue:
-       curr = queue.pop(0)
-       queue.extend(curr.children)
+   node = self.branches[branch_id]
+   node.is_aborted = True
+   self.active_speculative_heads.discard(branch_id)
    ```
-   Each descendant node in the subtree is visited exactly once. If the conflicting branch has $K$ total descendant version nodes, the cleanup cost is strictly bounded by $O(K)$. $\blacksquare$
+   Both the boolean flag mutation and the hash-set removal operate in $O(1)$ time. At this instant, all descendant version nodes are logically detached, and any speculative read queries on this branch fall back to `finalized_root`.
+2. **Physical Reclamation ($O(K)$):**
+   Physical garbage collection traverses the child pointers of the subtree rooted at $b_{\text{conflict}}$:
+   $$\text{ReclaimQueue} = [b_{\text{conflict}}]$$
+   Every descendant node in the subtree is dequeued, unlinked from parent references, and deallocated exactly once. If the branch has $K$ total descendant version nodes, the reclamation complexity is strictly $O(K)$. $\blacksquare$
 
-#### F. Theorem 4 (Canonical State Isolation Invariant)
-*Let $S_{\text{final}}(t)$ denote the canonical state at time $t$. For all execution histories and all arbitrary speculative rollbacks, $S_{\text{final}}(t)$ is monotonically non-decreasing and is never mutated by a speculative rollback.*
+#### G. Theorem 4 (Canonical Final-State Isolation)
+*Let $S_{\text{final}}(t)$ denote the canonical state at time $t$. For all execution histories and all arbitrary speculative rollbacks, speculative execution is strictly isolated from canonical storage, and $S_{\text{final}}(t)$ is monotonically non-decreasing.*
 
 *Proof:*
-1. Canonical state mutations occur exclusively within `finalize_branch(branch_id)` upon receipt of a verified Quorum Certificate.
-2. `logical_rollback(branch_id)` strictly mutates speculative version nodes where `node.is_finalized == False`.
-3. Read operations on canonical state (`get_finalized(key)`) access only `finalized_root`, which is decoupled from active child nodes.
-4. Hence, $\forall t, S_{\text{final}}(t) \subseteq \text{Certified History}$, and speculative rollbacks have zero side-effects on finalized state ($D_{\text{final}} \equiv 0$). $\blacksquare$
+1. By architectural construction (`mvcc_version_tree.py`), tentative state deltas are written solely to dynamically allocated `VersionNode` child instances.
+2. Canonical reads (`get_finalized(key)`) query only `finalized_root`, which is physically segregated from speculative version nodes.
+3. Mutations to `finalized_root` occur exclusively within `finalize_branch(branch_id)`, which requires verification of a valid Fast-QC or Slow-QC.
+4. When `logical_rollback(branch_id)` is invoked, it operates only on unfinalized version nodes (`node.is_finalized == False`).
+5. Therefore, no sequence of speculative operations or rollbacks can alter $S_{\text{final}}(t)$, guaranteeing $D_{\text{final}} \equiv 0$. $\blacksquare$
 
 ---
 
@@ -244,7 +263,7 @@ Benchmarks were executed on a dedicated multi-threaded testbed under Python 3.12
 ### VIII. Empirical Evaluation and Benchmark Results
 
 #### A. Experiment A: Latency vs. Modeled Network Delay Sweeps
-Table III presents the latency profiles across modeled network RTT sweeps from 1 ms (data-center LAN) to 200 ms (cross-continental WAN). Under all network regimes, AetherBFT's unanimous fast path completes in approximately one modeled RTT, achieving a **50.0% latency reduction compared to PBFT** (2 RTT) and **66.8% latency reduction compared to HotStuff** (3 RTT).
+Table III presents the latency profiles across a controlled network-delay model parameterized across RTT sweeps from 1 ms (data-center LAN) to 200 ms (cross-continental WAN). Under the evaluated network-delay model, AetherBFT's speculative acknowledgment approaches one modeled RTT, while modeled finalization latency is approximately 1.5 to 2.0 RTT. Compared against classical PBFT (modeled at 2 RTT) and HotStuff (modeled at 3 RTT), AetherBFT demonstrates a 50.0% reduction in speculative acknowledgment latency relative to PBFT and 66.8% relative to HotStuff.
 
 **TABLE III: Latency Profiles across Modeled Network RTT Sweeps (100 Trials per Grid Point)**
 
