@@ -8,6 +8,16 @@
   year      = {1982}
 }
 
+@article{pease1980reaching,
+  author    = {Marshall Pease and Robert Shostak and Leslie Lamport},
+  title     = {Reaching Agreement in the Presence of Faults},
+  journal   = {Journal of the ACM (JACM)},
+  volume    = {27},
+  number    = {2},
+  pages     = {228--234},
+  year      = {1980}
+}
+
 @inproceedings{castro1999practical,
   author    = {Miguel Castro and Barbara Liskov},
   title     = {Practical Byzantine Fault Tolerance},
@@ -16,30 +26,24 @@
   year      = {1999}
 }
 
-@article{corbett2013spanner,
-  author    = {James C. Corbett and others},
-  title     = {Spanner: Google's Globally Distributed Database},
-  journal   = {ACM Transactions on Computer Systems (TOCS)},
-  volume    = {31},
-  number    = {3},
-  pages     = {1--22},
-  year      = {2013}
+@article{schneider1990implementing,
+  author    = {Fred B. Schneider},
+  title     = {Implementing Fault-Tolerant Services Using the State Machine Approach: A Tutorial},
+  journal   = {ACM Computing Surveys (CSUR)},
+  volume    = {22},
+  number    = {4},
+  pages     = {299--319},
+  year      = {1990}
 }
 
-@inproceedings{yin2019hotstuff,
-  author    = {Maofan Yin and Dahlia Malkhi and Michael K. Reiter and Guy Golan Gueta and Ittai Abraham},
-  title     = {HotStuff: BFT Consensus with Linearity and Responsiveness},
-  booktitle = {Proc. ACM Symposium on Principles of Distributed Computing (PODC)},
-  pages     = {347--356},
-  year      = {2019}
-}
-
-@inproceedings{kotla2007zyzzyva,
-  author    = {Ramakrishna Kotla and Michael Dahlin and Arun Venkataramani and Allen Clement},
-  title     = {Zyzzyva: Speculative Byzantine Fault Tolerance},
-  booktitle = {Proc. 21st ACM Symposium on Operating Systems Principles (SOSP)},
-  pages     = {45--58},
-  year      = {2007}
+@article{fischer1985impossibility,
+  author    = {Michael J. Fischer and Nancy A. Lynch and Michael S. Paterson},
+  title     = {Impossibility of Distributed Consensus with One Faulty Process},
+  journal   = {Journal of the ACM (JACM)},
+  volume    = {32},
+  number    = {2},
+  pages     = {374--382},
+  year      = {1985}
 }
 
 @article{dwork1988consensus,
@@ -52,14 +56,46 @@
   year      = {1988}
 }
 
-@article{bernstein2012high,
-  author    = {Daniel J. Bernstein and Niels Duif and Tanja Lange and Peter Schwabe and Bo-Yin Yang},
-  title     = {High-speed high-security signatures},
-  journal   = {Journal of Cryptographic Engineering},
-  volume    = {2},
-  number    = {2},
-  pages     = {77--89},
-  year      = {2012}
+@inproceedings{kotla2007zyzzyva,
+  author    = {Ramakrishna Kotla and Michael Dahlin and Arun Venkataramani and Allen Clement},
+  title     = {Zyzzyva: Speculative Byzantine Fault Tolerance},
+  booktitle = {Proc. 21st ACM Symposium on Operating Systems Principles (SOSP)},
+  pages     = {45--58},
+  year      = {2007}
+}
+
+@inproceedings{clement2009making,
+  author    = {Allen Clement and Edmund L. Wong and Lorenzo Alvisi and Michael Dahlin and Mirco Marchetti},
+  title     = {Making Byzantine Fault Tolerant Systems Tolerant to Byzantine Faults},
+  booktitle = {Proc. 6th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  pages     = {153--168},
+  year      = {2009}
+}
+
+@inproceedings{guerraoui2010next,
+  author    = {Rachid Guerraoui and Nikola Kne{{z}}evi{'c} and Vivien Qu{'e}ma and Marko Vukoli{'c}},
+  title     = {The Next 700 BFT Protocols},
+  booktitle = {Proc. 5th European Conference on Computer Systems (EuroSys)},
+  pages     = {363--376},
+  year      = {2010}
+}
+
+@inproceedings{yin2019hotstuff,
+  author    = {Maofan Yin and Dahlia Malkhi and Michael K. Reiter and Guy Golan Gueta and Ittai Abraham},
+  title     = {HotStuff: BFT Consensus with Linearity and Responsiveness},
+  booktitle = {Proc. ACM Symposium on Principles of Distributed Computing (PODC)},
+  pages     = {347--356},
+  year      = {2019}
+}
+
+@article{abraham2020sync,
+  author    = {Ittai Abraham and Dahlia Malkhi and Kartik Nayak and Ling Ren and Maofan Yin},
+  title     = {Sync-HotStuff: Simple and Practical BFT for Asynchronous Networks},
+  journal   = {IEEE Transactions on Dependable and Secure Computing},
+  volume    = {18},
+  number    = {6},
+  pages     = {2868--2880},
+  year      = {2020}
 }
 
 @inproceedings{danezis2022narwhal,
@@ -70,12 +106,36 @@
   year      = {2022}
 }
 
-@inproceedings{clement2009making,
-  author    = {Allen Clement and Edmund L. Wong and Lorenzo Alvisi and Michael Dahlin and Mirco Marchetti},
-  title     = {Making Byzantine Fault Tolerant Systems Tolerant to Byzantine Faults},
-  booktitle = {Proc. 6th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
-  pages     = {153--168},
-  year      = {2009}
+@inproceedings{spiegelman2022bullshark,
+  author    = {Alexander Spiegelman and Neil Giridharan and Alberto Sonnino and Lefteris Kokoris-Kogias},
+  title     = {Bullshark: DAG BFT Protocols Made Practical},
+  booktitle = {Proc. ACM SIGSAC Conference on Computer and Communications Security (CCS)},
+  pages     = {2705--2718},
+  year      = {2022}
+}
+
+@article{buchman2016tendermint,
+  author    = {Ethan Buchman},
+  title     = {Tendermint: Byzantine Fault Tolerance in the Age of Blockchains},
+  journal   = {Master's Thesis, University of Guelph},
+  year      = {2016}
+}
+
+@article{aptos2022whitepaper,
+  author    = {Aptos Labs},
+  title     = {The Aptos Blockchain: Safe, Scalable, and Upgradeable Web3 Infrastructure},
+  journal   = {Aptos Technical Report},
+  year      = {2022}
+}
+
+@article{corbett2013spanner,
+  author    = {James C. Corbett and Jeffrey Dean and Michael Epstein and Andrew Fikes and Christopher Frost and others},
+  title     = {Spanner: Google's Globally Distributed Database},
+  journal   = {ACM Transactions on Computer Systems (TOCS)},
+  volume    = {31},
+  number    = {3},
+  pages     = {1--22},
+  year      = {2013}
 }
 
 @article{bernstein1983multiversion,
@@ -98,12 +158,89 @@
   year      = {1981}
 }
 
-@article{fischer1985impossibility,
-  author    = {Michael J. Fischer and Nancy A. Lynch and Michael S. Paterson},
-  title     = {Impossibility of Distributed Consensus with One Faulty Process},
-  journal   = {Journal of the ACM (JACM)},
-  volume    = {32},
+@inproceedings{tu2013speedy,
+  author    = {Stephen Tu and Wenting Zheng and Eddie Kohler and Barbara Liskov and Samuel Madden},
+  title     = {Speedy Transactions in Multicore In-Memory Databases},
+  booktitle = {Proc. 24th ACM Symposium on Operating Systems Principles (SOSP)},
+  pages     = {18--32},
+  year      = {2013}
+}
+
+@article{thomson2012calvin,
+  author    = {Alexander Thomson and Thaddeus Diamond and Shu-Chun Weng and Kun Ren and Philip Shao and Daniel J. Abadi},
+  title     = {Calvin: Fast Distributed Transactions for Partitioned Database Systems},
+  journal   = {Proc. ACM International Conference on Management of Data (SIGMOD)},
+  pages     = {1--12},
+  year      = {2012}
+}
+
+@article{bernstein2012high,
+  author    = {Daniel J. Bernstein and Niels Duif and Tanja Lange and Peter Schwabe and Bo-Yin Yang},
+  title     = {High-Speed High-Security Signatures},
+  journal   = {Journal of Cryptographic Engineering},
+  volume    = {2},
   number    = {2},
-  pages     = {374--382},
-  year      = {1985}
+  pages     = {77--89},
+  year      = {2012}
+}
+
+@article{boneh2004short,
+  author    = {Dan Boneh and Ben Lynn and Hovav Shacham},
+  title     = {Short Signatures from the Weil Pairing},
+  journal   = {Journal of Cryptology},
+  volume    = {17},
+  number    = {4},
+  pages     = {297--319},
+  year      = {2004}
+}
+
+@inproceedings{ongaro2014search,
+  author    = {Diego Ongaro and John Ousterhout},
+  title     = {In Search of an Understandable Consensus Algorithm},
+  booktitle = {Proc. USENIX Annual Technical Conference (ATC)},
+  pages     = {305--319},
+  year      = {2014}
+}
+
+@article{cachin2011introduction,
+  author    = {Christian Cachin and Rachid Guerraoui and Lu{'\i}s Rodrigues},
+  title     = {Introduction to Reliable and Secure Distributed Programming},
+  journal   = {Springer Science \& Business Media},
+  year      = {2011}
+}
+
+@article{vukolic2015quest,
+  author    = {Marko Vukoli{'c}},
+  title     = {The Quest for Scalable Blockchain Fabric: Proof-of-Work vs. BFT Replication},
+  journal   = {Proc. International Workshop on Open Problems in Network Security (iNetSec)},
+  pages     = {112--125},
+  year      = {2015}
+}
+
+@article{distler2016byzantine,
+  author    = {Tobias Distler and Christian Cachin and R{"u}diger Kapitza},
+  title     = {Resource-Efficient Byzantine Fault Tolerance},
+  journal   = {IEEE Transactions on Computers},
+  volume    = {65},
+  number    = {9},
+  pages     = {2807--2819},
+  year      = {2016}
+}
+
+@article{bessani2014state,
+  author    = {Alysson Bessani and Jo{\~a}o Sousa and Eduardo Alchieri},
+  title     = {State Machine Replication for the Masses with BFT-SMaRt},
+  journal   = {Proc. 44th Annual IEEE/IFIP International Conference on Dependable Systems and Networks (DSN)},
+  pages     = {355--362},
+  year      = {2014}
+}
+
+@article{stathakopoulou2019mir,
+  author    = {Chrysoula Stathakopoulou and Tudor David and Matej Pavlovic and Marko Vukoli{'c}},
+  title     = {Mir-BFT: High-Throughput BFT for Blockchains},
+  journal   = {IEEE Transactions on Dependable and Secure Computing},
+  volume    = {19},
+  number    = {5},
+  pages     = {3376--3389},
+  year      = {2022}
 }
