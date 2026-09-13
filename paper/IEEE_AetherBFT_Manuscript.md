@@ -174,7 +174,7 @@ Under Assumptions A1 and A2 ($N = 3f + 1, \|\mathcal{B}\| \le f$):
 2. *Fast-Slow Intersection:* Because $Q_f = N = 3f + 1$, the intersection of any fast quorum $Q_f$ and any slow quorum $Q_s$ is identical to $Q_s$:
    $$Q_f \cap Q_s = Q_s \implies \|Q_f \cap Q_s \cap \mathcal{H}\| = \|Q_s \cap \mathcal{H}\| \ge (2f + 1) - f = f + 1$$
 
-*Proof:* Direct application of the pigeonhole principle over $N$ total replicas with at most $f$ Byzantine members. $\blacksquare$
+*Proof:* Direct application of the pigeonhole principle over $N$ total replicas with at most $f$ Byzantine members.
 
 **Lemma 2 (Fast-to-Slow Persistent Slot Locking Compatibility):**
 Under Assumptions A3, A4, and Lemma 1, if transaction $T_1$ with digest $d_1$ obtains a valid Fast-QC for slot $(v, s)$, no conflicting transaction $T_2$ with digest $d_2 \ne d_1$ can obtain a valid Slow-QC for slot $(v, s)$ in view $v$.
@@ -190,7 +190,7 @@ Under Assumptions A3, A4, and Lemma 1, if transaction $T_1$ with digest $d_1$ ob
 7. By Invariant 1 (Assumption A4), $R_h$ strictly rejects signing $d_2$ because `self.signed_slots[(v, s)] != d_2`.
 8. The maximum number of Prepare votes $d_2$ can gather in view $v$ is bounded by the $f$ Byzantine replicas plus the non-intersecting honest replicas:
    $$\text{Votes}(d_2) \le f + (\|\mathcal{H}\| - (f + 1)) = f + ((2f + 1) - (f + 1)) = 2f < 2f + 1$$
-9. Because $2f < 2f + 1$, proposal $d_2$ cannot accumulate the required supermajority. Hence, a conflicting Slow-QC in view $v$ cannot form. $\blacksquare$
+9. Because $2f < 2f + 1$, proposal $d_2$ cannot accumulate the required supermajority. Hence, a conflicting Slow-QC in view $v$ cannot form.
 
 **Lemma 3 (High-QC Monotonicity and Proposal Selection across View Changes):**
 Under Assumptions A1 through A7, if a transaction with digest $d$ is certified by a valid Quorum Certificate $QC_v$ for slot $s$ in view $v$, then for any higher view $v' > v$, any valid `NewView` proposal produced by an honest leader for slot $s$ must extend digest $d$.
@@ -207,7 +207,7 @@ Under Assumptions A1 through A7, if a transaction with digest $d$ is certified b
 7. Proposal Constraint: Under Assumption A7, the honest leader is constrained to set:
    $$\operatorname{Proposal}(v', s) = QC_{\text{selected}}.\text{digest} = d$$
 8. Replica Verification: When honest replicas receive proposal $(v', s, d)$, they verify it against their local `locked_qc`. Under High-QC locking (Assumption A5), an honest replica signs Prepare if $\operatorname{view}(\operatorname{Proposal}) > \operatorname{view}(\text{locked\_qc})$ or $\operatorname{digest}(\operatorname{Proposal}) == \operatorname{digest}(\text{locked\_qc})$. Because $\operatorname{view}(QC_{\text{selected}}) \ge \operatorname{view}(\text{locked\_qc})$, the proposal is validly accepted.
-9. Hence, the certified digest $d$ is monotonically preserved across all view changes. $\blacksquare$
+9. Hence, the certified digest $d$ is monotonically preserved across all view changes.
 
 #### D. Core Theorems
 
@@ -225,7 +225,7 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
    - By Lemma 3, any view change to a view higher than $v_1$ must select a certificate extending $d_1$.
    - Honest replicas enforce High-QC locking (Assumption A5) and reject any proposal in view $v_2$ that conflicts with $d_1$.
    - Therefore, $T_2$ cannot gather $2f + 1$ signatures in view $v_2$. Contradiction.
-3. Hence, no two conflicting transactions can ever obtain valid finalization certificates. $\blacksquare$
+3. Hence, no two conflicting transactions can ever obtain valid finalization certificates.
 
 **Theorem 2 (Liveness and Derived Communication Schedule under Partial Synchrony):**
 *Under Assumptions A1, A2, A5, A7, A9, and A10, following Global Stabilization Time (GST), any transaction submitted by an honest client is finalized. Specifically, once an honest leader is installed with pacemaker timeout $\tau > 5\Delta$, leader-observed certificate completion occurs within $4\Delta$, and replica-visible canonical finalization completes within $5\Delta$ protocol-delay units.*
@@ -256,7 +256,7 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
    - *Edge 5 ($T_{\text{finalize}} \le \Delta$):* $L_{v^*}$ broadcasts `COMMIT-QC(v*, s, Commit-QC)`. Replicas receive the certificate within $\Delta$, verify it, and invoke `finalize_branch()`, executing canonical state fold: $S_{\text{final}}^{(i)}(t+1) = S_{\text{final}}^{(i)}(t) \oplus d$.
    Summing all five communication edges:
    $$T_{\text{replica-final}} = T_{\text{prop}} + T_{\text{prep\_vote}} + T_{\text{commit\_prop}} + T_{\text{commit\_vote}} + T_{\text{finalize}} \le 5\Delta$$
-   Because $\tau > 5\Delta$, the pacemaker timeout does not expire prematurely during execution, and replica-visible canonical finalization is achieved within $5\Delta$ protocol-delay units. $\blacksquare$
+   Because $\tau > 5\Delta$, the pacemaker timeout does not expire prematurely during execution, and replica-visible canonical finalization is achieved within $5\Delta$ protocol-delay units.
 
 **Theorem 3 (Speculative Branch Abandonment and Reclamation Complexity):**
 *In the AetherBFT MVCC version tree, assuming branch metadata and active head sets are directly addressable via hash indexing:*
@@ -267,7 +267,7 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
 1. **$O(1)$ Logical Abandonment:**
    When `logical_rollback(branch_id)` is invoked, the node retrieves `node = self.branches[branch_id]` in $O(1)$ time via hash-table lookup. It sets `node.is_aborted = True` ($O(1)$) and executes `self.active_speculative_heads.discard(branch_id)` ($O(1)$). No child nodes are traversed during this transition. Thus, logical rollback of branch metadata executes in $O(1)$ time.
 2. **$O(K)$ Physical Reclamation:**
-   Garbage collection traverses the child pointers of the subtree rooted at $b_{\text{conflict}}$ using queue $\mathcal{Q} = [b_{\text{conflict}}]$. Each of the $K$ descendant nodes in the conflicting subtree is visited, unlinked from parent references, and deallocated exactly once. Total physical reclamation time is strictly bounded by $O(K)$. $\blacksquare$
+   Garbage collection traverses the child pointers of the subtree rooted at $b_{\text{conflict}}$ using queue $\mathcal{Q} = [b_{\text{conflict}}]$. Each of the $K$ descendant nodes in the conflicting subtree is visited, unlinked from parent references, and deallocated exactly once. Total physical reclamation time is strictly bounded by $O(K)$.
 
 **Theorem 4 (Speculative-to-Canonical State Isolation):**
 *Under Assumptions A6 and A8 and Invariant 2, speculative execution is strictly isolated from canonical state: speculative branch mutations and rollbacks cannot alter canonical state $S_{\text{final}}(t)$.*
@@ -278,7 +278,7 @@ We prove by contradiction. Suppose conflicting transactions $T_1$ and $T_2$ both
 3. Under Invariant 2, `finalized_root` is mutated solely by `finalize_branch()`, which requires verification of a valid QC (Assumption A6).
 4. `logical_rollback(branch_id)` operates strictly on unfinalized version nodes where `node.is_finalized == False`.
 5. Therefore, no sequence of speculative writes or rollbacks can mutate `finalized_root`, ensuring that canonical storage remains strictly isolated and prefix-monotonic.
-*(Note: Agreement among honest replicas on canonical state $S_{\text{final}}^{(i)} = S_{\text{final}}^{(j)}$ follows independently from Theorem 1 safety and deterministic execution A8).* $\blacksquare$
+*(Note: Agreement among honest replicas on canonical state $S_{\text{final}}^{(i)} = S_{\text{final}}^{(j)}$ follows independently from Theorem 1 safety and deterministic execution A8).*
 
 ### VI. Implementation Invariant Tests & Complexity Validation
 
