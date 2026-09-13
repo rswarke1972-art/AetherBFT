@@ -2,8 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 15/15 Invariants Passed](https://img.shields.io/badge/tests-15%2F15%20invariants%20passed-brightgreen.svg)](tests/)
-[![Paper: IEEE Format](https://img.shields.io/badge/paper-IEEE%20Format-purple.svg)](paper/IEEE_AetherBFT_Manuscript.md)
+[![Tests: 22/22 Passing](https://img.shields.io/badge/tests-22%2F22%20invariants%20passed-brightgreen.svg)](tests/)
+[![Published Paper: Web Reader](https://img.shields.io/badge/paper-Published%20Web%20Reader-blue.svg)](https://rswarke1972-art.github.io/AetherBFT/paper/)
+[![IEEE Manuscript: Markdown](https://img.shields.io/badge/paper-IEEE%20Manuscript%20.md-purple.svg)](paper/IEEE_AetherBFT_Manuscript.md)
+[![LaTeX Package: IEEEtran](https://img.shields.io/badge/latex-aetherbft.tex-orange.svg)](paper/aetherbft.tex)
 [![Live Simulation](https://img.shields.io/badge/demo-60%20FPS%20Canvas-cyan.svg)](https://rswarke1972-art.github.io/AetherBFT/)
 
 > **Algorithm 07 in the Flagship Algorithmic Research Portfolio**  
